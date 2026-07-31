@@ -1,6 +1,6 @@
 # Membership Token Contract
 
-A Soroban (Stellar) smart contract for issuing, transferring, and querying time-bound membership tokens in the ManageHub ecosystem.
+A Soroban (Stellar) smart contract for issuing, transferring, and querying time-bound membership tokens in the BeaconPay ecosystem.
 
 ## Overview
 
@@ -13,12 +13,12 @@ Each membership token is identified by a unique 32-byte ID and has:
 
 ## Functions
 
-| Function | Auth | Description |
-|---|---|---|
-| `set_admin(admin)` | `admin` | Set or replace the contract administrator. |
-| `issue_token(id, user, expiry_date)` | admin | Mint a new membership token. |
-| `transfer_token(id, new_user)` | current owner | Transfer token ownership. |
-| `get_token(id)` | none | Retrieve token details; returns `TokenExpired` if past expiry. |
+| Function                             | Auth          | Description                                                    |
+| ------------------------------------ | ------------- | -------------------------------------------------------------- |
+| `set_admin(admin)`                   | `admin`       | Set or replace the contract administrator.                     |
+| `issue_token(id, user, expiry_date)` | admin         | Mint a new membership token.                                   |
+| `transfer_token(id, new_user)`       | current owner | Transfer token ownership.                                      |
+| `get_token(id)`                      | none          | Retrieve token details; returns `TokenExpired` if past expiry. |
 
 ## Binary Target
 
@@ -26,13 +26,13 @@ Each membership token is identified by a unique 32-byte ID and has:
 
 ## Error Codes
 
-| Code | Name | Meaning |
-|---|---|---|
-| 1 | `AdminNotSet` | No admin has been configured yet. |
-| 2 | `TokenAlreadyIssued` | A token with this ID already exists. |
-| 3 | `InvalidExpiryDate` | Expiry date must be in the future. |
-| 4 | `TokenNotFound` | No token with the given ID exists. |
-| 5 | `TokenExpired` | Token has expired or an inactive token was queried. |
+| Code | Name                 | Meaning                                             |
+| ---- | -------------------- | --------------------------------------------------- |
+| 1    | `AdminNotSet`        | No admin has been configured yet.                   |
+| 2    | `TokenAlreadyIssued` | A token with this ID already exists.                |
+| 3    | `InvalidExpiryDate`  | Expiry date must be in the future.                  |
+| 4    | `TokenNotFound`      | No token with the given ID exists.                  |
+| 5    | `TokenExpired`       | Token has expired or an inactive token was queried. |
 
 ## Running Tests
 

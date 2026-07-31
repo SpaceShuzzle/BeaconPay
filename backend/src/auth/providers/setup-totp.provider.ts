@@ -25,7 +25,7 @@ export class SetupTotpProvider {
     await this.usersRepository.save(user);
 
     const otpauth = generateURI({
-      issuer: 'ManageHub',
+      issuer: 'BeaconPay',
       label: user.email,
       secret,
     });

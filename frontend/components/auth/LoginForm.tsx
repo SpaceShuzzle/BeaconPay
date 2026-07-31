@@ -6,13 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLogin } from "@/lib/hooks/useLogin";
-import {
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  Building2,
-} from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Building2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -31,10 +25,7 @@ interface LoginFormProps {
   isLoading: boolean;
 }
 
-export default function LoginForm({
-  onEmailLogin,
-  isLoading,
-}: LoginFormProps) {
+export default function LoginForm({ onEmailLogin, isLoading }: LoginFormProps) {
   const { login, loading } = useLogin();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -47,7 +38,7 @@ export default function LoginForm({
     [],
   );
 
-const {
+  const {
     register,
     handleSubmit,
     formState: { errors, submitCount },
@@ -61,13 +52,18 @@ const {
   const lastSubmittedRef = useRef(0);
 
   useEffect(() => {
-    if (submitCount > lastSubmittedRef.current && Object.keys(errors).length > 0) {
+    if (
+      submitCount > lastSubmittedRef.current &&
+      Object.keys(errors).length > 0
+    ) {
       lastSubmittedRef.current = submitCount;
       const firstErrorField = Object.keys(errors)[0];
       const errorEl = document.getElementById(firstErrorField);
       errorEl?.focus();
       const count = Object.keys(errors).length;
-      setAnnouncement(`${count} field${count > 1 ? "s" : ""} need${count > 1 ? "" : "s"} attention`);
+      setAnnouncement(
+        `${count} field${count > 1 ? "s" : ""} need${count > 1 ? "" : "s"} attention`,
+      );
     }
     if (Object.keys(errors).length === 0 && submitCount > 0) {
       setAnnouncement("");
@@ -91,7 +87,9 @@ const {
           className="bg-white rounded-xl shadow-sm border border-gray-200 p-8"
           aria-label="Sign in form"
         >
-          <div aria-live="polite" className="sr-only">{announcement}</div>
+          <div aria-live="polite" className="sr-only">
+            {announcement}
+          </div>
           <div className="space-y-6">
             {/* Email Input */}
             <div>
@@ -117,7 +115,11 @@ const {
                   placeholder="Enter your email"
                 />
                 {errors.email?.message && (
-                  <p id="email-error" className="text-xs text-red-600 mt-1" role="alert">
+                  <p
+                    id="email-error"
+                    className="text-xs text-red-600 mt-1"
+                    role="alert"
+                  >
                     {errors.email.message}
                   </p>
                 )}
@@ -143,7 +145,9 @@ const {
                   required
                   aria-required={true}
                   aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? "password-error" : undefined}
+                  aria-describedby={
+                    errors.password ? "password-error" : undefined
+                  }
                   className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent transition-all"
                   placeholder="Enter your password"
                 />
@@ -160,7 +164,11 @@ const {
                   )}
                 </button>
                 {errors.password?.message && (
-                  <p id="password-error" className="text-xs text-red-600 mt-1" role="alert">
+                  <p
+                    id="password-error"
+                    className="text-xs text-red-600 mt-1"
+                    role="alert"
+                  >
                     {errors.password.message}
                   </p>
                 )}
@@ -217,7 +225,7 @@ const {
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500">
-          <p>© 2026 ManageHub. All rights reserved.</p>
+          <p>© 2026 BeaconPay. All rights reserved.</p>
           <div className="mt-2 space-x-4">
             <a href="#" className="hover:text-gray-700">
               Privacy Policy

@@ -3,42 +3,64 @@ import { http, HttpResponse } from "msw";
 export const handlers = [
   // AUTH ENDPOINTS
   http.post("*/auth/login", async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as Record<string, string>;
+    const body = (await request.json().catch(() => ({}))) as Record<
+      string,
+      string
+    >;
     if (body.email === "invalid@example.com") {
       return HttpResponse.json(
         { success: false, statusCode: 401, message: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     return HttpResponse.json({
       success: true,
       data: {
         token: "mock-jwt-token",
-        user: { id: "user-1", email: body.email || "user@example.com", name: "Test User", role: "MEMBER" },
+        user: {
+          id: "user-1",
+          email: body.email || "user@example.com",
+          name: "Test User",
+          role: "MEMBER",
+        },
       },
     });
   }),
 
   http.post("*/auth/register", async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as Record<string, string>;
+    const body = (await request.json().catch(() => ({}))) as Record<
+      string,
+      string
+    >;
     if (body.email === "existing@example.com") {
       return HttpResponse.json(
-        { success: false, statusCode: 400, message: "Email already registered" },
-        { status: 400 }
+        {
+          success: false,
+          statusCode: 400,
+          message: "Email already registered",
+        },
+        { status: 400 },
       );
     }
     return HttpResponse.json({
       success: true,
-      data: { id: "user-2", email: body.email || "new@example.com", message: "Registration successful" },
+      data: {
+        id: "user-2",
+        email: body.email || "new@example.com",
+        message: "Registration successful",
+      },
     });
   }),
 
   http.post("*/auth/verify-otp", async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as Record<string, string>;
+    const body = (await request.json().catch(() => ({}))) as Record<
+      string,
+      string
+    >;
     if (body.code === "000000") {
       return HttpResponse.json(
         { success: false, statusCode: 400, message: "Invalid OTP code" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return HttpResponse.json({
@@ -62,11 +84,14 @@ export const handlers = [
   }),
 
   http.post("*/auth/verify-2fa", async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as Record<string, string>;
+    const body = (await request.json().catch(() => ({}))) as Record<
+      string,
+      string
+    >;
     if (body.code === "000000") {
       return HttpResponse.json(
         { success: false, statusCode: 400, message: "Invalid 2FA code" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return HttpResponse.json({
@@ -78,7 +103,12 @@ export const handlers = [
   http.get("*/auth/me", () => {
     return HttpResponse.json({
       success: true,
-      data: { id: "user-1", email: "user@example.com", name: "Test User", role: "MEMBER" },
+      data: {
+        id: "user-1",
+        email: "user@example.com",
+        name: "Test User",
+        role: "MEMBER",
+      },
     });
   }),
 
@@ -88,7 +118,12 @@ export const handlers = [
       success: true,
       data: [
         { id: "ws-1", name: "Desk 101", hourlyRate: 100000, totalSeats: 10 },
-        { id: "ws-2", name: "Private Office A", hourlyRate: 500000, totalSeats: 4 },
+        {
+          id: "ws-2",
+          name: "Private Office A",
+          hourlyRate: 500000,
+          totalSeats: 4,
+        },
       ],
       meta: { total: 2, page: 1, limit: 10, totalPages: 1 },
     });
@@ -97,7 +132,12 @@ export const handlers = [
   http.get("*/workspaces/:id", ({ params }) => {
     return HttpResponse.json({
       success: true,
-      data: { id: params.id, name: `Workspace ${params.id}`, hourlyRate: 100000, totalSeats: 10 },
+      data: {
+        id: params.id,
+        name: `Workspace ${params.id}`,
+        hourlyRate: 100000,
+        totalSeats: 10,
+      },
     });
   }),
 
@@ -210,7 +250,12 @@ export const handlers = [
     return HttpResponse.json({
       success: true,
       data: [
-        { id: "notif-1", title: "Welcome", message: "Welcome to ManageHub", read: false },
+        {
+          id: "notif-1",
+          title: "Welcome",
+          message: "Welcome to BeaconPay",
+          read: false,
+        },
       ],
     });
   }),

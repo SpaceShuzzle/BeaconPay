@@ -89,8 +89,8 @@ const ContactUsClient = () => {
     {
       icon: <Mail className="h-6 w-6" />,
       title: "Email",
-      content: "support@managehub.com",
-      link: "mailto:support@managehub.com",
+      content: "support@BeaconPay.com",
+      link: "mailto:support@BeaconPay.com",
     },
     {
       icon: <Phone className="h-6 w-6" />,
@@ -128,7 +128,7 @@ const ContactUsClient = () => {
                 <Building2 className="h-8 w-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">ManageHub</h1>
+            <h1 className="text-3xl font-bold text-gray-900">BeaconPay</h1>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
@@ -144,8 +144,8 @@ const ContactUsClient = () => {
                   Message Sent Successfully!
                 </h2>
                 <p className="text-gray-600">
-                  Thank you for reaching out to us. We&apos;ve received your message
-                  and our team will get back to you within 24-48 hours.
+                  Thank you for reaching out to us. We&apos;ve received your
+                  message and our team will get back to you within 24-48 hours.
                 </p>
               </div>
 
@@ -199,8 +199,8 @@ const ContactUsClient = () => {
             Get in Touch
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Have questions about ManageHub? We&apos;d love to hear from you. Send us
-            a message and we&apos;ll respond as soon as possible.
+            Have questions about BeaconPay? We&apos;d love to hear from you.
+            Send us a message and we&apos;ll respond as soon as possible.
           </p>
         </div>
 
@@ -483,7 +483,7 @@ const ContactUsClient = () => {
         </div>
 
         <div className="text-center mt-12 text-sm text-gray-500">
-          <p>© 2026 ManageHub. All rights reserved.</p>
+          <p>© 2026 BeaconPay. All rights reserved.</p>
           <div className="mt-2 space-x-4">
             <a href="#" className="hover:text-gray-700">
               Privacy Policy

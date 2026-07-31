@@ -1,4 +1,4 @@
-const CACHE_NAME = "managehub-shell-v1";
+const CACHE_NAME = "BeaconPay-shell-v1";
 
 // App-shell assets to precache
 const PRECACHE_URLS = ["/", "/offline", "/dashboard"];
@@ -9,7 +9,7 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -20,12 +20,10 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys
-            .filter((k) => k !== CACHE_NAME)
-            .map((k) => caches.delete(k))
-        )
+          keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)),
+        ),
       )
-      .then(() => self.clients.claim())
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -38,7 +36,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   // Network-only for API calls
-  if (url.pathname.startsWith("/api") || url.hostname !== self.location.hostname) {
+  if (
+    url.pathname.startsWith("/api") ||
+    url.hostname !== self.location.hostname
+  ) {
     return; // Let the browser handle it normally
   }
 
@@ -46,10 +47,13 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match("/offline").then(
-          (cached) => cached || new Response("You are offline.", { status: 503 })
-        )
-      )
+        caches
+          .match("/offline")
+          .then(
+            (cached) =>
+              cached || new Response("You are offline.", { status: 503 }),
+          ),
+      ),
     );
     return;
   }
@@ -63,7 +67,7 @@ self.addEventListener("fetch", (event) => {
           return response;
         });
         return cached || networkFetch;
-      })
-    )
+      }),
+    ),
   );
 });

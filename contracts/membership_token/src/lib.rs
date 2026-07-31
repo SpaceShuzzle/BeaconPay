@@ -1,7 +1,7 @@
 #![no_std]
 //! # Membership Token Crate
 //!
-//! Expanded membership token contract extracted from the ManageHub monolith.
+//! Expanded membership token contract extracted from the BeaconPay monolith.
 //! Provides token issuance, transfer, metadata, renewal, allowance,
 //! and fractionalization features.
 

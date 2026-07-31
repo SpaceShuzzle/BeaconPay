@@ -1,7 +1,7 @@
 {
-  "name": "@managehub/contract-bindings",
+  "name": "@BeaconPay/contract-bindings",
   "version": "0.1.0",
-  "description": "Auto-generated TypeScript bindings for ManageHub Soroban contracts",
+  "description": "Auto-generated TypeScript bindings for BeaconPay Soroban contracts",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

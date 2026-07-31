@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   viewport: "width=device-width, initial-scale=1",
   title: {
-    default: "ManageHub - Smart Hub & Workspace Management",
-    template: "%s | ManageHub",
+    default: "BeaconPay - Smart Hub & Workspace Management",
+    template: "%s | BeaconPay",
   },
   description:
     "Smart Hub & Workspace Management System for modern teams. Streamline operations, manage resources, and boost productivity with our comprehensive management platform.",
@@ -34,16 +34,16 @@ export const metadata: Metadata = {
     "collaboration tools",
     "project management",
   ],
-  authors: [{ name: "ManageHub Team" }],
-  creator: "ManageHub",
-  publisher: "ManageHub",
+  authors: [{ name: "BeaconPay Team" }],
+  creator: "BeaconPay",
+  publisher: "BeaconPay",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://managehub.app",
+    process.env.NEXT_PUBLIC_APP_URL || "https://BeaconPay.app",
   ),
   alternates: {
     canonical: "/",
@@ -52,27 +52,27 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "ManageHub - Smart Hub & Workspace Management",
+    title: "BeaconPay - Smart Hub & Workspace Management",
     description:
       "Smart Hub & Workspace Management System for modern teams. Streamline operations, manage resources, and boost productivity with our comprehensive management platform.",
-    siteName: "ManageHub",
+    siteName: "BeaconPay",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "ManageHub - Smart Hub & Workspace Management",
+        alt: "BeaconPay - Smart Hub & Workspace Management",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ManageHub - Smart Hub & Workspace Management",
+    title: "BeaconPay - Smart Hub & Workspace Management",
     description:
       "Smart Hub & Workspace Management System for modern teams. Streamline operations, manage resources, and boost productivity.",
     images: ["/og-image.png"],
-    creator: "@managehubs",
-    site: "@managehubs",
+    creator: "@BeaconPays",
+    site: "@BeaconPays",
   },
   robots: {
     index: true,

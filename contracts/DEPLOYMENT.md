@@ -1,33 +1,33 @@
-# ManageHub Contracts — Deployment Guide
+# BeaconPay Contracts — Deployment Guide
 
 ## Prerequisites
 
 ### Required Tools
 
-| Tool | Version | Install |
-|------|---------|---------|
-| Rust | stable | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
-| WASM target | — | `rustup target add wasm32v1-none` |
-| Stellar CLI | ≥ 23.1 | `brew install stellar-cli` or `cargo install --locked stellar-cli@23.1.3` |
+| Tool        | Version | Install                                                                   |
+| ----------- | ------- | ------------------------------------------------------------------------- |
+| Rust        | stable  | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh`         |
+| WASM target | —       | `rustup target add wasm32v1-none`                                         |
+| Stellar CLI | ≥ 23.1  | `brew install stellar-cli` or `cargo install --locked stellar-cli@23.1.3` |
 
 ### Required Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `STELLAR_SECRET_KEY` | Secret key for the deployer account (testnet/futurenet) | `S...` |
-| `LOCAL_SOURCE` | Name of the local identity (standalone only) | `myaccount` |
+| Variable             | Description                                             | Example     |
+| -------------------- | ------------------------------------------------------- | ----------- |
+| `STELLAR_SECRET_KEY` | Secret key for the deployer account (testnet/futurenet) | `S...`      |
+| `LOCAL_SOURCE`       | Name of the local identity (standalone only)            | `myaccount` |
 
 ## Contracts Deployed
 
-| Contract | WASM File | Purpose |
-|----------|-----------|---------|
-| `access_control` | `access_control.wasm` | RBAC, multisig, role management |
-| `common_types` | `common_types.wasm` | Shared type definitions |
-| `workspace_booking` | `workspace_booking.wasm` | Workspace reservation system |
-| `payment_escrow` | `payment_escrow.wasm` | Payment escrow lifecycle |
-| `resource_credits` | `resource_credits.wasm` | Credit minting, transfer, spending |
-| `membership_token` | `membership_token.wasm` | NFT membership tokens |
-| `manage_hub` | `manage_hub.wasm` | Main hub contract (subscriptions, staking, upgrades) |
+| Contract            | WASM File                | Purpose                                              |
+| ------------------- | ------------------------ | ---------------------------------------------------- |
+| `access_control`    | `access_control.wasm`    | RBAC, multisig, role management                      |
+| `common_types`      | `common_types.wasm`      | Shared type definitions                              |
+| `workspace_booking` | `workspace_booking.wasm` | Workspace reservation system                         |
+| `payment_escrow`    | `payment_escrow.wasm`    | Payment escrow lifecycle                             |
+| `resource_credits`  | `resource_credits.wasm`  | Credit minting, transfer, spending                   |
+| `membership_token`  | `membership_token.wasm`  | NFT membership tokens                                |
+| `manage_hub`        | `manage_hub.wasm`        | Main hub contract (subscriptions, staking, upgrades) |
 
 ## Deploy to Testnet
 

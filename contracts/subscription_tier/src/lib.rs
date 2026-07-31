@@ -1,7 +1,7 @@
 #![no_std]
 //! # Subscription & Tier Management Crate (Stub)
 //!
-//! Extracted from the ManageHub monolith. This crate will contain:
+//! Extracted from the BeaconPay monolith. This crate will contain:
 //! - Subscription CRUD (create, renew, cancel, pause, resume)
 //! - Tier management (create, update, deactivate tiers)
 //! - Tier change requests (upgrade/downgrade)

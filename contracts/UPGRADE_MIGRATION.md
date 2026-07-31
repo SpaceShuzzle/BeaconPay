@@ -1,6 +1,6 @@
 # Contract Upgrade & Migration Guide
 
-This document explains how Soroban contract upgrades work, how the ManageHub
+This document explains how Soroban contract upgrades work, how the BeaconPay
 contracts implement upgrades and data migration, and provides a step-by-step
 guide for deploying, upgrading, migrating, and rolling back.
 
@@ -30,11 +30,11 @@ upgrade mechanism:
 
 ---
 
-## Current Upgrade Mechanism in ManageHub
+## Current Upgrade Mechanism in BeaconPay
 
 ### Token Upgrade System (`upgrade.rs`)
 
-The ManageHub contract implements a **token-level** upgrade system for
+The BeaconPay contract implements a **token-level** upgrade system for
 membership tokens. This is distinct from the protocol-level contract upgrade.
 
 ```
@@ -64,11 +64,11 @@ membership tokens. This is distinct from the protocol-level contract upgrade.
 
 The upgrade system is configured via `set_upgrade_config`:
 
-| Field | Description |
-|-------|-------------|
-| `upgrades_enabled` | Master toggle for token upgrades |
-| `admin_only` | If true, only admin can upgrade tokens |
-| `max_rollbacks` | Maximum rollback count per token (0 = unlimited) |
+| Field              | Description                                      |
+| ------------------ | ------------------------------------------------ |
+| `upgrades_enabled` | Master toggle for token upgrades                 |
+| `admin_only`       | If true, only admin can upgrade tokens           |
+| `max_rollbacks`    | Maximum rollback count per token (0 = unlimited) |
 
 ### Migration Module (`migration.rs`)
 
@@ -81,11 +81,11 @@ The `MigrationModule` provides utilities for:
 
 ### Storage Keys Used
 
-| Key | Storage Type | Description |
-|-----|-------------|-------------|
-| `UpgradeConfig` | Instance | Global upgrade configuration |
-| `UpgradeHistory(token_id)` | Persistent | Vector of UpgradeRecord for a token |
-| `VersionSnapshot(token_id, version)` | Persistent | Snapshot of token state at a version |
+| Key                                  | Storage Type | Description                          |
+| ------------------------------------ | ------------ | ------------------------------------ |
+| `UpgradeConfig`                      | Instance     | Global upgrade configuration         |
+| `UpgradeHistory(token_id)`           | Persistent   | Vector of UpgradeRecord for a token  |
+| `VersionSnapshot(token_id, version)` | Persistent   | Snapshot of token state at a version |
 
 ---
 
@@ -184,6 +184,7 @@ client.rollback_token_upgrade(&admin, &token_id, &2);
 ```
 
 Key properties:
+
 - Version number continues incrementing (never resets)
 - State fields (expiry, tier, status) are restored from snapshot
 - Rollback count is tracked and limited by `max_rollbacks`

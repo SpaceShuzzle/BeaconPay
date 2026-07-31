@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `resource_credits` contract implements a credit system for the ManageHub platform. Credits can be minted by an admin, transferred between members, and spent (burned) by members to pay for services. Total supply is tracked and updated on every mint and spend operation.
+The `resource_credits` contract implements a credit system for the BeaconPay platform. Credits can be minted by an admin, transferred between members, and spent (burned) by members to pay for services. Total supply is tracked and updated on every mint and spend operation.
 
 ## Architecture
 
@@ -16,12 +16,12 @@ src/
 
 ### Storage Keys
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `Admin` | `Address` | Contract administrator |
-| `PaymentToken` | `Address` | Associated payment token |
-| `Balance(Address)` | `u128` | Credit balance per member |
-| `TotalSupply` | `u128` | Total credits in circulation |
+| Key                | Type      | Description                  |
+| ------------------ | --------- | ---------------------------- |
+| `Admin`            | `Address` | Contract administrator       |
+| `PaymentToken`     | `Address` | Associated payment token     |
+| `Balance(Address)` | `u128`    | Credit balance per member    |
+| `TotalSupply`      | `u128`    | Total credits in circulation |
 
 ## Credit Flow
 
@@ -110,14 +110,14 @@ assert_eq!(client.total_supply(), 9_500); // decreased
 
 ## Error Codes
 
-| Code | Name | Description |
-|------|------|-------------|
-| 1 | `AdminNotSet` | No admin configured |
-| 2 | `AlreadyInitialized` | Contract already initialized |
-| 3 | `Unauthorized` | Caller is not the admin |
-| 4 | `InsufficientBalance` | Member balance too low |
-| 5 | `InvalidAmount` | Amount must be > 0 |
-| 6 | `AccountNotFound` | Account not in storage |
+| Code | Name                  | Description                  |
+| ---- | --------------------- | ---------------------------- |
+| 1    | `AdminNotSet`         | No admin configured          |
+| 2    | `AlreadyInitialized`  | Contract already initialized |
+| 3    | `Unauthorized`        | Caller is not the admin      |
+| 4    | `InsufficientBalance` | Member balance too low       |
+| 5    | `InvalidAmount`       | Amount must be > 0           |
+| 6    | `AccountNotFound`     | Account not in storage       |
 
 ## Testing
 

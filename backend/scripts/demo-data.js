@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * ManageHub Demo / Seed Data Script
+ * BeaconPay Demo / Seed Data Script
  *
  * Usage:
  *   node scripts/demo-data.js seed [--force] [--dry-run]
@@ -37,7 +37,10 @@ const flags = {
 // ---------------------------------------------------------------------------
 function log(level, msg) {
   const ts = new Date().toISOString();
-  const prefix = { INFO: '\x1b[36m', WARN: '\x1b[33m', ERROR: '\x1b[31m', OK: '\x1b[32m' }[level] || '';
+  const prefix =
+    { INFO: '\x1b[36m', WARN: '\x1b[33m', ERROR: '\x1b[31m', OK: '\x1b[32m' }[
+      level
+    ] || '';
   console.log(`${prefix}[${ts}] [${level}] ${msg}\x1b[0m`);
 }
 
@@ -50,8 +53,11 @@ function createClient() {
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     user: process.env.DATABASE_USERNAME || 'postgres',
     password: process.env.DATABASE_PASSWORD || 'postgres',
-    database: process.env.DATABASE_NAME || 'managehub',
-    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+    database: process.env.DATABASE_NAME || 'BeaconPay',
+    ssl:
+      process.env.DATABASE_SSL === 'true'
+        ? { rejectUnauthorized: false }
+        : undefined,
   });
 }
 
@@ -63,16 +69,66 @@ function uuid() {
 // Realistic seed data
 // ---------------------------------------------------------------------------
 const DEMO_USERS = [
-  { firstname: 'Amina', lastname: 'Okafor', email: 'amina.okafor@demo.com', role: 'admin' },
-  { firstname: 'Tunde', lastname: 'Adesanya', email: 'tunde.adesanya@demo.com', role: 'staff' },
-  { firstname: 'Chidinma', lastname: 'Eze', email: 'chidinma.eze@demo.com', role: 'user' },
-  { firstname: 'Emeka', lastname: 'Nwosu', email: 'emeka.nwosu@demo.com', role: 'user' },
-  { firstname: 'Folake', lastname: 'Bakare', email: 'folake.bakare@demo.com', role: 'user' },
-  { firstname: 'Ibrahim', lastname: 'Musa', email: 'ibrahim.musa@demo.com', role: 'user' },
-  { firstname: 'Ngozi', lastname: 'Adeyemi', email: 'ngozi.adeyemi@demo.com', role: 'staff' },
-  { firstname: 'Kola', lastname: 'Abiodun', email: 'kola.abiodun@demo.com', role: 'user' },
-  { firstname: 'Sade', lastname: 'Olawale', email: 'sade.olawale@demo.com', role: 'user' },
-  { firstname: 'Obinna', lastname: 'Uche', email: 'obinna.uche@demo.com', role: 'user' },
+  {
+    firstname: 'Amina',
+    lastname: 'Okafor',
+    email: 'amina.okafor@demo.com',
+    role: 'admin',
+  },
+  {
+    firstname: 'Tunde',
+    lastname: 'Adesanya',
+    email: 'tunde.adesanya@demo.com',
+    role: 'staff',
+  },
+  {
+    firstname: 'Chidinma',
+    lastname: 'Eze',
+    email: 'chidinma.eze@demo.com',
+    role: 'user',
+  },
+  {
+    firstname: 'Emeka',
+    lastname: 'Nwosu',
+    email: 'emeka.nwosu@demo.com',
+    role: 'user',
+  },
+  {
+    firstname: 'Folake',
+    lastname: 'Bakare',
+    email: 'folake.bakare@demo.com',
+    role: 'user',
+  },
+  {
+    firstname: 'Ibrahim',
+    lastname: 'Musa',
+    email: 'ibrahim.musa@demo.com',
+    role: 'user',
+  },
+  {
+    firstname: 'Ngozi',
+    lastname: 'Adeyemi',
+    email: 'ngozi.adeyemi@demo.com',
+    role: 'staff',
+  },
+  {
+    firstname: 'Kola',
+    lastname: 'Abiodun',
+    email: 'kola.abiodun@demo.com',
+    role: 'user',
+  },
+  {
+    firstname: 'Sade',
+    lastname: 'Olawale',
+    email: 'sade.olawale@demo.com',
+    role: 'user',
+  },
+  {
+    firstname: 'Obinna',
+    lastname: 'Uche',
+    email: 'obinna.uche@demo.com',
+    role: 'user',
+  },
 ];
 
 const WORKSPACE_NAMES = [
@@ -88,7 +144,13 @@ const WORKSPACE_NAMES = [
   'Downtown Hub Room 101',
 ];
 
-const WORKSPACE_TYPES = ['private_office', 'meeting_room', 'hot_desk', 'event_space', 'day_pass'];
+const WORKSPACE_TYPES = [
+  'private_office',
+  'meeting_room',
+  'hot_desk',
+  'event_space',
+  'day_pass',
+];
 
 const BOOKING_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'];
 
@@ -118,7 +180,7 @@ function hashPassword() {
 
 async function tableExists(client, tableName) {
   const res = await client.query(
-    "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)",
+    'SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)',
     [tableName],
   );
   return res.rows[0].exists;
@@ -126,7 +188,9 @@ async function tableExists(client, tableName) {
 
 async function countRows(client, tableName) {
   if (!(await tableExists(client, tableName))) return 0;
-  const res = await client.query(`SELECT COUNT(*)::int AS cnt FROM ${tableName}`);
+  const res = await client.query(
+    `SELECT COUNT(*)::int AS cnt FROM ${tableName}`,
+  );
   return res.rows[0].cnt;
 }
 
@@ -138,7 +202,10 @@ async function cmdSeed(client) {
   const existingUsers = await countRows(client, 'users');
 
   if (existingUsers > 0 && !flags.force) {
-    log('WARN', `Found ${existingUsers} existing users. Use --force to seed anyway.`);
+    log(
+      'WARN',
+      `Found ${existingUsers} existing users. Use --force to seed anyway.`,
+    );
     await client.end();
     return;
   }
@@ -158,7 +225,14 @@ async function cmdSeed(client) {
     const sql = `INSERT INTO users (id, firstname, lastname, email, password, role, "isVerified", "isActive", "createdAt", "updatedAt")
       VALUES ($1, $2, $3, $4, $5, $6, true, true, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING`;
-    const params = [id, u.firstname, u.lastname, u.email, hashPassword(), u.role];
+    const params = [
+      id,
+      u.firstname,
+      u.lastname,
+      u.email,
+      hashPassword(),
+      u.role,
+    ];
     if (flags.dryRun) {
       log('INFO', `DRY-RUN: ${sql.replace(/\$\d+/g, '?')}`);
     } else {
@@ -209,7 +283,16 @@ async function cmdSeed(client) {
     const seatCount = Math.floor(Math.random() * 4) + 1;
     const sql = `INSERT INTO bookings (id, "userId", "workspaceId", "planType", "startDate", "endDate", "totalAmount", status, "seatCount", "createdAt", "updatedAt")
       VALUES ($1, $2, $3, 'HOURLY', $4, $5, $6, $7, $8, NOW(), NOW())`;
-    const params = [id, userId, wsId, startDate, endDate, totalAmount, status, seatCount];
+    const params = [
+      id,
+      userId,
+      wsId,
+      startDate,
+      endDate,
+      totalAmount,
+      status,
+      seatCount,
+    ];
     if (flags.dryRun) {
       log('INFO', `DRY-RUN: ${sql.replace(/\$\d+/g, '?')}`);
     } else {
@@ -272,7 +355,10 @@ async function cmdValidate(client) {
   let errors = 0;
 
   // Check for orphaned bookings (userId not in users)
-  if (await tableExists(client, 'bookings') && await tableExists(client, 'users')) {
+  if (
+    (await tableExists(client, 'bookings')) &&
+    (await tableExists(client, 'users'))
+  ) {
     const orphanBookings = await client.query(
       `SELECT COUNT(*)::int AS cnt FROM bookings b LEFT JOIN users u ON b."userId" = u.id WHERE u.id IS NULL`,
     );
@@ -283,12 +369,18 @@ async function cmdValidate(client) {
   }
 
   // Check for orphaned invoices (bookingId not in bookings)
-  if (await tableExists(client, 'invoices') && await tableExists(client, 'bookings')) {
+  if (
+    (await tableExists(client, 'invoices')) &&
+    (await tableExists(client, 'bookings'))
+  ) {
     const orphanInvoices = await client.query(
       `SELECT COUNT(*)::int AS cnt FROM invoices i LEFT JOIN bookings b ON i."bookingId" = b.id WHERE b.id IS NULL`,
     );
     if (orphanInvoices.rows[0].cnt > 0) {
-      log('WARN', `Orphaned invoices (no booking): ${orphanInvoices.rows[0].cnt}`);
+      log(
+        'WARN',
+        `Orphaned invoices (no booking): ${orphanInvoices.rows[0].cnt}`,
+      );
       errors++;
     }
   }
@@ -299,7 +391,10 @@ async function cmdValidate(client) {
       `SELECT email, COUNT(*)::int AS cnt FROM users GROUP BY email HAVING COUNT(*) > 1`,
     );
     if (dupes.rows.length > 0) {
-      log('WARN', `Duplicate emails found: ${dupes.rows.map((r) => r.email).join(', ')}`);
+      log(
+        'WARN',
+        `Duplicate emails found: ${dupes.rows.map((r) => r.email).join(', ')}`,
+      );
       errors++;
     }
   }
@@ -310,7 +405,10 @@ async function cmdValidate(client) {
       `SELECT COUNT(*)::int AS cnt FROM workspaces WHERE "availableSeats" < 0 OR "availableSeats" > "totalSeats"`,
     );
     if (badSeats.rows[0].cnt > 0) {
-      log('WARN', `Workspaces with invalid seat counts: ${badSeats.rows[0].cnt}`);
+      log(
+        'WARN',
+        `Workspaces with invalid seat counts: ${badSeats.rows[0].cnt}`,
+      );
       errors++;
     }
   }
@@ -330,7 +428,10 @@ async function main() {
 
   try {
     await client.connect();
-    log('INFO', `Connected to database at ${client.host || 'localhost'}:${client.port || 5432}`);
+    log(
+      'INFO',
+      `Connected to database at ${client.host || 'localhost'}:${client.port || 5432}`,
+    );
 
     switch (command) {
       case 'seed':
@@ -350,7 +451,10 @@ async function main() {
         break;
       default:
         log('ERROR', `Unknown command: ${command}`);
-        log('INFO', 'Usage: node scripts/demo-data.js [seed|clear|info|validate] [--force] [--dry-run] [--clear]');
+        log(
+          'INFO',
+          'Usage: node scripts/demo-data.js [seed|clear|info|validate] [--force] [--dry-run] [--clear]',
+        );
         process.exit(1);
     }
   } catch (error) {

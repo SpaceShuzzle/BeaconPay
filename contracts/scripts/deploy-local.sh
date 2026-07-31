@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ──────────────────────────────────────────────────────────────────────────────
-# deploy-local.sh — Deploy all ManageHub contracts to local Stellar stand-alone.
+# deploy-local.sh — Deploy all BeaconPay contracts to local Stellar stand-alone.
 #
 # Usage:
 #   ./contracts/scripts/deploy-local.sh

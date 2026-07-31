@@ -1,5 +1,5 @@
 #![no_std]
-//! # ManageHub Contract
+//! # BeaconPay Contract
 //!
 //! ## Multisig Integration for Critical Operations
 //!

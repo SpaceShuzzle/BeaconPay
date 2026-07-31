@@ -1,7 +1,7 @@
 #![no_std]
 //! # Staking & Rewards Crate
 //!
-//! Extracted from the ManageHub monolith. Provides staking tier management,
+//! Extracted from the BeaconPay monolith. Provides staking tier management,
 //! token staking/unstaking, penalty calculation, and reward accrual.
 
 mod errors;

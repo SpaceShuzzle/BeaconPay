@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export interface HubSettings {
   hubName: string;
@@ -16,8 +16,8 @@ export interface HubSettings {
 }
 
 const DEFAULTS: HubSettings = {
-  hubName: 'ManageHub',
-  primaryColor: '#2563EB',
+  hubName: "BeaconPay",
+  primaryColor: "#2563EB",
 };
 
 async function fetchHubSettings(): Promise<HubSettings> {
@@ -35,7 +35,7 @@ async function fetchHubSettings(): Promise<HubSettings> {
  */
 export function useHubSettings() {
   const { data, isLoading } = useQuery<HubSettings>({
-    queryKey: ['hub-settings'],
+    queryKey: ["hub-settings"],
     queryFn: fetchHubSettings,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

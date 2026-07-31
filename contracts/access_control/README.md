@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `access_control` contract provides a comprehensive Role-Based Access Control (RBAC) system for the ManageHub platform. It implements hierarchical role management (Admin > Member > Guest), multi-signature governance with configurable thresholds, admin transfer workflows, and blacklisting. Designed for cross-contract integration with subscription and membership token contracts.
+The `access_control` contract provides a comprehensive Role-Based Access Control (RBAC) system for the BeaconPay platform. It implements hierarchical role management (Admin > Member > Guest), multi-signature governance with configurable thresholds, admin transfer workflows, and blacklisting. Designed for cross-contract integration with subscription and membership token contracts.
 
 ## Architecture
 
@@ -34,10 +34,10 @@ Guest (Level 0)
 
 ### Multisig Governance
 
-| Threshold Level | Use Case |
-|-----------------|----------|
-| `required_signatures` | Standard operations (role assignment) |
-| `critical_threshold` | Critical operations (config updates, admin add/remove) |
+| Threshold Level       | Use Case                                                     |
+| --------------------- | ------------------------------------------------------------ |
+| `required_signatures` | Standard operations (role assignment)                        |
+| `critical_threshold`  | Critical operations (config updates, admin add/remove)       |
 | `emergency_threshold` | Emergency operations (force admin transfer, emergency pause) |
 
 ### Proposal Lifecycle
@@ -115,20 +115,20 @@ fn get_multisig_threshold(env: Env) -> u32
 
 ## Proposal Actions
 
-| Action | Type | Description |
-|--------|------|-------------|
-| `SetRole(Address, UserRole)` | Standard | Assign a role to a user |
-| `UpdateConfig(AccessControlConfig)` | Critical | Update access control configuration |
-| `AddAdmin(Address)` | Critical | Add a new admin |
-| `RemoveAdmin(Address)` | Critical | Remove an admin |
-| `Pause` | Critical | Pause the contract |
-| `Unpause` | Standard | Unpause the contract |
-| `TransferAdmin(Address)` | Critical | Transfer admin privileges |
-| `UpdateMultisigConfig(MultiSigConfig)` | Critical | Update multisig thresholds |
-| `EmergencyPause(String)` | Emergency | Emergency pause with reason |
-| `BatchBlacklist(Vec<Address>)` | Critical | Blacklist multiple users |
-| `ScheduleUpgrade(Address, u64)` | TimeLocked | Schedule a contract upgrade |
-| `EmergencyAdminTransfer(Address)` | Emergency | Force admin transfer |
+| Action                                 | Type       | Description                         |
+| -------------------------------------- | ---------- | ----------------------------------- |
+| `SetRole(Address, UserRole)`           | Standard   | Assign a role to a user             |
+| `UpdateConfig(AccessControlConfig)`    | Critical   | Update access control configuration |
+| `AddAdmin(Address)`                    | Critical   | Add a new admin                     |
+| `RemoveAdmin(Address)`                 | Critical   | Remove an admin                     |
+| `Pause`                                | Critical   | Pause the contract                  |
+| `Unpause`                              | Standard   | Unpause the contract                |
+| `TransferAdmin(Address)`               | Critical   | Transfer admin privileges           |
+| `UpdateMultisigConfig(MultiSigConfig)` | Critical   | Update multisig thresholds          |
+| `EmergencyPause(String)`               | Emergency  | Emergency pause with reason         |
+| `BatchBlacklist(Vec<Address>)`         | Critical   | Blacklist multiple users            |
+| `ScheduleUpgrade(Address, u64)`        | TimeLocked | Schedule a contract upgrade         |
+| `EmergencyAdminTransfer(Address)`      | Emergency  | Force admin transfer                |
 
 ## Example Usage
 
@@ -161,22 +161,22 @@ AccessControl::approve_proposal(&env, approver, proposal_id);
 
 ## Error Codes
 
-| Code | Name | Description |
-|------|------|-------------|
-| 100 | `Unauthorized` | Caller not authorized |
-| 101 | `AdminRequired` | Admin privileges required |
-| 103 | `InsufficientRole` | User role too low |
-| 109 | `NotInitialized` | System not initialized |
-| 115 | `ContractPaused` | Contract is paused |
-| 116 | `MultisigNotEnabled` | Multisig not enabled |
-| 117 | `InsufficientApprovals` | Not enough approvals for execution |
-| 118 | `ProposalNotFound` | Proposal not found |
-| 119 | `ProposalAlreadyExecuted` | Proposal already executed |
-| 120 | `ProposalExpired` | Proposal has expired |
-| 121 | `TimeLockActive` | Time-lock period not yet passed |
-| 125 | `MaxProposalsReached` | Too many pending proposals |
-| 130 | `CannotRemoveLastAdmin` | Cannot remove the last admin |
-| 133 | `ProposalRejected` | Rejection threshold reached |
+| Code | Name                      | Description                        |
+| ---- | ------------------------- | ---------------------------------- |
+| 100  | `Unauthorized`            | Caller not authorized              |
+| 101  | `AdminRequired`           | Admin privileges required          |
+| 103  | `InsufficientRole`        | User role too low                  |
+| 109  | `NotInitialized`          | System not initialized             |
+| 115  | `ContractPaused`          | Contract is paused                 |
+| 116  | `MultisigNotEnabled`      | Multisig not enabled               |
+| 117  | `InsufficientApprovals`   | Not enough approvals for execution |
+| 118  | `ProposalNotFound`        | Proposal not found                 |
+| 119  | `ProposalAlreadyExecuted` | Proposal already executed          |
+| 120  | `ProposalExpired`         | Proposal has expired               |
+| 121  | `TimeLockActive`          | Time-lock period not yet passed    |
+| 125  | `MaxProposalsReached`     | Too many pending proposals         |
+| 130  | `CannotRemoveLastAdmin`   | Cannot remove the last admin       |
+| 133  | `ProposalRejected`        | Rejection threshold reached        |
 
 ## Testing
 

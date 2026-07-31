@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ──────────────────────────────────────────────────────────────────────────────
-# deploy-testnet.sh — Deploy all ManageHub contracts to Stellar testnet.
+# deploy-testnet.sh — Deploy all BeaconPay contracts to Stellar testnet.
 #
 # Usage:
 #   ./contracts/scripts/deploy-testnet.sh --network testnet

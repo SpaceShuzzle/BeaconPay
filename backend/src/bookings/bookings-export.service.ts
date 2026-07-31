@@ -71,7 +71,15 @@ export class BookingsExportService {
     const data = bookings.map((b) => this.mapBooking(b));
 
     const parser = new Parser({
-      fields: ['id', 'workspace', 'user', 'status', 'startTime', 'endTime', 'amount'],
+      fields: [
+        'id',
+        'workspace',
+        'user',
+        'status',
+        'startTime',
+        'endTime',
+        'amount',
+      ],
     });
 
     return Buffer.from(parser.parse(data), 'utf-8');
@@ -81,7 +89,7 @@ export class BookingsExportService {
     const bookings = await this.findBookings(filters);
 
     const workbook = new Workbook();
-    workbook.creator = 'ManageHub';
+    workbook.creator = 'BeaconPay';
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('Bookings');

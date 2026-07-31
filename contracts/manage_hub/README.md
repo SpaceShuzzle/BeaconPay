@@ -1,8 +1,8 @@
-# ManageHub Contract
+# BeaconPay Contract
 
 ## Overview
 
-The `manage_hub` contract is the central hub for the ManageHub coworking platform. It integrates subscription management, membership token NFTs, token metadata, staking, fractionalization, upgrades, attendance tracking, emergency pause, and batch operations into a single Soroban contract.
+The `manage_hub` contract is the central hub for the BeaconPay coworking platform. It integrates subscription management, membership token NFTs, token metadata, staking, fractionalization, upgrades, attendance tracking, emergency pause, and batch operations into a single Soroban contract.
 
 ## Architecture
 
@@ -31,16 +31,16 @@ src/
 
 ### Sub-Module Summary
 
-| Module | Purpose |
-|--------|---------|
-| `subscription` | Create, renew, cancel, pause subscriptions; tier CRUD; promotions; feature access |
-| `membership_token` | Issue, transfer, renew membership NFTs; metadata; auto-renewal |
-| `staking` | Stake tokens for rewards; configurable staking tiers and penalties |
-| `fractionalization` | Fractional ownership of tokens; dividend distribution |
-| `upgrade` | Versioned token upgrades with rollback support |
-| `attendance_log` | Clock-in/out tracking; attendance analytics and peak-hour analysis |
-| `batch` | Batch mint, transfer, and metadata update operations |
-| `royalty` | Configure per-token royalty splits on transfers |
+| Module              | Purpose                                                                           |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `subscription`      | Create, renew, cancel, pause subscriptions; tier CRUD; promotions; feature access |
+| `membership_token`  | Issue, transfer, renew membership NFTs; metadata; auto-renewal                    |
+| `staking`           | Stake tokens for rewards; configurable staking tiers and penalties                |
+| `fractionalization` | Fractional ownership of tokens; dividend distribution                             |
+| `upgrade`           | Versioned token upgrades with rollback support                                    |
+| `attendance_log`    | Clock-in/out tracking; attendance analytics and peak-hour analysis                |
+| `batch`             | Batch mint, transfer, and metadata update operations                              |
+| `royalty`           | Configure per-token royalty splits on transfers                                   |
 
 ## Functions
 

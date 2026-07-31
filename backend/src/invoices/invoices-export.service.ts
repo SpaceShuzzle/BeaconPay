@@ -94,7 +94,7 @@ export class InvoicesExportService {
     const invoices = await this.findInvoices(filters);
 
     const workbook = new Workbook();
-    workbook.creator = 'ManageHub';
+    workbook.creator = 'BeaconPay';
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('Invoices');

@@ -123,7 +123,7 @@ export function RegisterPage({ onRegister, isLoading }: RegisterPageProps) {
             Create Your Account
           </h1>
           <p className="text-gray-600 text-sm sm:text-base">
-            Join ManageHub and transform your workspace experience
+            Join BeaconPay and transform your workspace experience
           </p>
         </div>
 
@@ -230,7 +230,7 @@ export function RegisterPage({ onRegister, isLoading }: RegisterPageProps) {
       {/* Footer */}
       <footer className="mt-8 sm:mt-16 text-center px-4">
         <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-          © 2026 ManageHub. All rights reserved.
+          © 2026 BeaconPay. All rights reserved.
         </p>
         <div className="flex flex-col space-y-2 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-6">
           <button className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:underline transition-colors">
@@ -264,13 +264,18 @@ function PersonalInfoStep({ form, onSubmit }: PersonalInfoStepProps) {
   const lastSubmittedRef = useRef(0);
 
   useEffect(() => {
-    if (submitCount > lastSubmittedRef.current && Object.keys(errors).length > 0) {
+    if (
+      submitCount > lastSubmittedRef.current &&
+      Object.keys(errors).length > 0
+    ) {
       lastSubmittedRef.current = submitCount;
       const firstErrorField = Object.keys(errors)[0];
       const errorEl = document.getElementById(firstErrorField);
       errorEl?.focus();
       const count = Object.keys(errors).length;
-      setAnnouncement(`${count} field${count > 1 ? "s" : ""} need${count > 1 ? "" : "s"} attention`);
+      setAnnouncement(
+        `${count} field${count > 1 ? "s" : ""} need${count > 1 ? "" : "s"} attention`,
+      );
     }
     if (Object.keys(errors).length === 0 && submitCount > 0) {
       setAnnouncement("");
@@ -278,8 +283,14 @@ function PersonalInfoStep({ form, onSubmit }: PersonalInfoStepProps) {
   }, [errors, submitCount]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" aria-label="Registration form">
-      <div aria-live="polite" className="sr-only">{announcement}</div>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6"
+      aria-label="Registration form"
+    >
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       {/* Full Name */}
       <div>
         <label
@@ -300,7 +311,13 @@ function PersonalInfoStep({ form, onSubmit }: PersonalInfoStepProps) {
           icon={<User className="w-5 h-5" />}
         />
         {errors.fullName?.message && (
-          <p id="fullName-error" className="text-sm text-red-600 mt-1" role="alert">{errors.fullName.message}</p>
+          <p
+            id="fullName-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.fullName.message}
+          </p>
         )}
       </div>
 
@@ -323,7 +340,13 @@ function PersonalInfoStep({ form, onSubmit }: PersonalInfoStepProps) {
           icon={<Mail className="w-5 h-5" />}
         />
         {errors.email?.message && (
-          <p id="email-error" className="text-sm text-red-600 mt-1" role="alert">{errors.email.message}</p>
+          <p
+            id="email-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.email.message}
+          </p>
         )}
       </div>
 
@@ -342,11 +365,19 @@ function PersonalInfoStep({ form, onSubmit }: PersonalInfoStepProps) {
           {...register("phoneNumber")}
           error={errors.phoneNumber?.message}
           aria-required={true}
-          aria-describedby={errors.phoneNumber ? "phoneNumber-error" : undefined}
+          aria-describedby={
+            errors.phoneNumber ? "phoneNumber-error" : undefined
+          }
           icon={<Phone className="w-5 h-5" />}
         />
         {errors.phoneNumber?.message && (
-          <p id="phoneNumber-error" className="text-sm text-red-600 mt-1" role="alert">{errors.phoneNumber.message}</p>
+          <p
+            id="phoneNumber-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.phoneNumber.message}
+          </p>
         )}
       </div>
 
@@ -368,7 +399,13 @@ function PersonalInfoStep({ form, onSubmit }: PersonalInfoStepProps) {
           icon={<MapPin className="w-5 h-5" />}
         />
         {errors.location?.message && (
-          <p id="location-error" className="text-sm text-red-600 mt-1" role="alert">{errors.location.message}</p>
+          <p
+            id="location-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.location.message}
+          </p>
         )}
       </div>
 
@@ -418,13 +455,18 @@ function AccountSetupStep({
   const lastSubmittedRef = useRef(0);
 
   useEffect(() => {
-    if (submitCount > lastSubmittedRef.current && Object.keys(errors).length > 0) {
+    if (
+      submitCount > lastSubmittedRef.current &&
+      Object.keys(errors).length > 0
+    ) {
       lastSubmittedRef.current = submitCount;
       const firstErrorField = Object.keys(errors)[0];
       const errorEl = document.getElementById(firstErrorField);
       errorEl?.focus();
       const count = Object.keys(errors).length;
-      setAnnouncement(`${count} field${count > 1 ? "s" : ""} need${count > 1 ? "" : "s"} attention`);
+      setAnnouncement(
+        `${count} field${count > 1 ? "s" : ""} need${count > 1 ? "" : "s"} attention`,
+      );
     }
     if (Object.keys(errors).length === 0 && submitCount > 0) {
       setAnnouncement("");
@@ -432,10 +474,21 @@ function AccountSetupStep({
   }, [errors, submitCount]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" aria-label="Account setup form">
-      <div aria-live="polite" className="sr-only">{announcement}</div>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6"
+      aria-label="Account setup form"
+    >
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       {/* User Type Selection */}
-      <div role="radiogroup" aria-required={true} aria-invalid={!!errors.userType} aria-describedby={errors.userType ? "userType-error" : undefined}>
+      <div
+        role="radiogroup"
+        aria-required={true}
+        aria-invalid={!!errors.userType}
+        aria-describedby={errors.userType ? "userType-error" : undefined}
+      >
         <label className="block text-sm font-medium text-gray-700 mb-3">
           I am a *
         </label>
@@ -462,7 +515,13 @@ function AccountSetupStep({
           ))}
         </div>
         {errors.userType && (
-          <p id="userType-error" className="text-sm text-red-600 mt-1" role="alert">{errors.userType.message}</p>
+          <p
+            id="userType-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.userType.message}
+          </p>
         )}
       </div>
 
@@ -481,11 +540,19 @@ function AccountSetupStep({
           {...register("organizationName")}
           error={errors.organizationName?.message}
           aria-required={true}
-          aria-describedby={errors.organizationName ? "organizationName-error" : undefined}
+          aria-describedby={
+            errors.organizationName ? "organizationName-error" : undefined
+          }
           icon={<Building2 className="w-5 h-5" />}
         />
         {errors.organizationName?.message && (
-          <p id="organizationName-error" className="text-sm text-red-600 mt-1" role="alert">{errors.organizationName.message}</p>
+          <p
+            id="organizationName-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.organizationName.message}
+          </p>
         )}
       </div>
 
@@ -521,7 +588,13 @@ function AccountSetupStep({
           </button>
         </div>
         {errors.password?.message && (
-          <p id="password-error" className="text-sm text-red-600 mt-1" role="alert">{errors.password.message}</p>
+          <p
+            id="password-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.password.message}
+          </p>
         )}
       </div>
 
@@ -541,7 +614,9 @@ function AccountSetupStep({
             {...register("confirmPassword")}
             error={errors.confirmPassword?.message}
             aria-required={true}
-            aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
+            aria-describedby={
+              errors.confirmPassword ? "confirmPassword-error" : undefined
+            }
             icon={<Lock className="w-5 h-5" />}
           />
           <button
@@ -557,7 +632,13 @@ function AccountSetupStep({
           </button>
         </div>
         {errors.confirmPassword?.message && (
-          <p id="confirmPassword-error" className="text-sm text-red-600 mt-1" role="alert">{errors.confirmPassword.message}</p>
+          <p
+            id="confirmPassword-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {errors.confirmPassword.message}
+          </p>
         )}
       </div>
 
@@ -570,7 +651,9 @@ function AccountSetupStep({
             {...register("agreeToTerms")}
             aria-required={true}
             aria-invalid={!!errors.agreeToTerms}
-            aria-describedby={errors.agreeToTerms ? "agreeToTerms-error" : undefined}
+            aria-describedby={
+              errors.agreeToTerms ? "agreeToTerms-error" : undefined
+            }
             className="mt-1 h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-300"
           />
           <label htmlFor="agreeToTerms" className="text-sm text-gray-700">
@@ -591,7 +674,11 @@ function AccountSetupStep({
           </label>
         </div>
         {errors.agreeToTerms && (
-          <p id="agreeToTerms-error" className="text-sm text-red-600 mt-1" role="alert">
+          <p
+            id="agreeToTerms-error"
+            className="text-sm text-red-600 mt-1"
+            role="alert"
+          >
             {errors.agreeToTerms.message}
           </p>
         )}

@@ -11,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       disallow,
     },
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://managehub.app"}/sitemap.xml`,
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://BeaconPay.app"}/sitemap.xml`,
   };
 }

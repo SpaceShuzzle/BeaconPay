@@ -1,200 +1,95 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# BeaconPay — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The backend powers post preview rendering, payout logic, the plain-language payment parser, and orchestration between the frontend and the Stellar/Soroban network.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Responsibilities
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Generate accurate preview metadata for LinkedIn, Facebook, X, and Instagram (crop ratios, character limits, link-card previews).
+- Store projects, posts, collaborators, and payout splits.
+- Build unsigned Stellar multi-operation transactions from a payout split (client signs client-side via Freighter/Albedo — backend never holds private keys).
+- Parse plain-language payment commands into structured payment intents.
+- Listen for post "Approved" events and trigger the Soroban escrow release call.
+- Store and serve on-chain payout receipts (tx hash + per-recipient breakdown).
 
-## Project setup
+## Tech Stack
 
-```bash
-$ npm install
+| Concern | Choice |
+|---|---|
+| Runtime | Node.js (TypeScript) |
+| Framework | Express / Fastify |
+| Database | PostgreSQL |
+| ORM | Prisma |
+| Stellar SDK | `stellar-sdk` (JS) for building/submitting transactions |
+| Soroban | `soroban-client` for contract calls |
+| NLP Parser | Lightweight rule-based / regex + entity extraction (recipient handles, amounts, asset codes); upgradeable to an LLM-based parser later |
+| Auth | JWT + wallet-signature login (sign a nonce with Freighter to authenticate) |
+| Queue | Redis + BullMQ (for async transaction submission & receipt polling) |
+
+## Project Structure
+
+```
+backend/
+├── src/
+│   ├── routes/
+│   │   ├── posts.ts          # CRUD for posts + preview metadata
+│   │   ├── payouts.ts        # Build/submit payout transactions
+│   │   ├── commands.ts       # Parse plain-language payment commands
+│   │   ├── escrow.ts         # Trigger/query Soroban escrow contract
+│   │   └── auth.ts           # Wallet-signature based auth
+│   ├── services/
+│   │   ├── previewRenderer.ts
+│   │   ├── stellarTx.ts      # Multi-op transaction builder
+│   │   ├── sorobanClient.ts  # Contract invocation helpers
+│   │   └── nlpParser.ts
+│   ├── db/
+│   │   ├── schema.prisma
+│   │   └── client.ts
+│   ├── jobs/
+│   │   └── receiptPoller.ts  # Polls Horizon for tx confirmation, stores receipts
+│   └── index.ts
+├── .env.example
+├── package.json
+└── tsconfig.json
 ```
 
-## Database migrations
+## Environment Variables
 
-The application never synchronizes entity changes to the database at startup.
-Apply the checked-in migrations before starting an environment:
-
-```bash
-npm run migration:run
+```env
+DATABASE_URL=postgresql://user:pass@localhost:5432/beaconpay
+STELLAR_NETWORK=testnet          # testnet | public
+HORIZON_URL=https://horizon-testnet.stellar.org
+SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+ESCROW_CONTRACT_ID=CA...         # deployed Soroban contract ID
+JWT_SECRET=changeme
+REDIS_URL=redis://localhost:6379
 ```
 
-Create a migration after changing an entity (replace `DescriptiveName` with a
-meaningful name), inspect the generated file, and commit it with the entity
-change:
+## Key API Endpoints
+
+| Method | Route | Description |
+|---|---|---|
+| POST | `/posts` | Create a post with caption + media, returns platform preview metadata |
+| GET | `/posts/:id/preview` | Fetch rendered preview data for all platforms |
+| POST | `/posts/:id/approve` | Client marks post approved → triggers payout/escrow release |
+| POST | `/payouts/build` | Build an unsigned multi-op Stellar transaction from a payout split |
+| POST | `/payouts/submit` | Submit a client-signed transaction to the network |
+| POST | `/commands/parse` | Parse a plain-language payment instruction into a structured intent |
+| GET | `/receipts/:txHash` | Fetch a stored payout receipt |
+
+## Local Development
 
 ```bash
-npm run migration:generate -- src/migrations/DescriptiveName
+git clone <repo-url> beaconpay-backend
+cd beaconpay-backend
+npm install
+cp .env.example .env
+npx prisma migrate dev
+npm run dev
 ```
 
-To undo the most recently applied migration in a local/development database:
+## Notes on Security
 
-```bash
-npm run migration:revert
-```
-
-The commands use `src/database/data-source.ts` and the same environment
-variables as the application (`DATABASE_HOST`, `DATABASE_PORT`,
-`DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_NAME`, `DATABASE_SSL`, and
-`PGSSLMODE`). Do not use `synchronize` or edit an already-applied migration.
-
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Inventory Items Module
-
-This module manages consumable stock items (stationery, spare parts, printer cartridges, etc.).
-
-### Features
-
-- CRUD operations for inventory items
-- Stock movement tracking (IN/OUT)
-- Reorder level monitoring
-- Stock adjustment with reason tracking
-
-### API Endpoints
-
-- `POST /inventory-items` - Create a new inventory item
-- `GET /inventory-items` - Get all inventory items
-- `GET /inventory-items/:id` - Get a specific inventory item
-- `PUT /inventory-items/:id` - Update an inventory item
-- `DELETE /inventory-items/:id` - Delete an inventory item
-- `PUT /inventory-items/:id/stock` - Update stock quantity
-- `POST /inventory-items/:id/stock/add` - Add stock
-- `POST /inventory-items/:id/stock/remove` - Remove stock
-- `GET /inventory-items/:id/reorder-status` - Check if item is below reorder level
-- `GET /inventory-items/:id/stock-movements` - Get stock movement history
-
-### Entities
-
-#### InventoryItem
-- `id` - Primary key
-- `name` - Item name
-- `quantity` - Current stock quantity
-- `reorderLevel` - Minimum stock level before reorder alert
-- `createdAt` - Creation timestamp
-- `updatedAt` - Last update timestamp
-
-#### StockMovement
-- `id` - Primary key
-- `type` - Movement type (IN/OUT)
-- `quantity` - Quantity moved
-- `reason` - Reason for movement
-- `inventoryItem` - Reference to inventory item
-- `createdAt` - Movement timestamp
-
-## User Profile Management Module
-
-This module provides comprehensive user profile management capabilities with avatar upload support.
-
-### Features
-
-- **Profile Information Management**: Update personal details (name, email, phone, username)
-- **Avatar Management**: Upload, update, and remove profile pictures with Cloudinary integration
-- **Security & Validation**: JWT authentication, input validation, and file security
-- **API Documentation**: Complete Swagger documentation
-
-### API Endpoints
-
-- `GET /profile` - Get current user profile
-- `PATCH /profile` - Update profile information
-- `POST /profile/avatar` - Upload profile picture
-- `DELETE /profile/avatar` - Remove profile picture
-
-### Configuration
-
-Ensure the following environment variables are set for avatar upload functionality:
-
-```bash
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-CLOUDINARY_FOLDER=profile-pictures
-```
-
-For detailed documentation, see [User Profile Module README](./src/user-profile/README.md).
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- The backend **never** stores or handles private keys. All transactions are built unsigned, signed client-side, then submitted.
+- Escrow release calls are triggered only after verifying the post's "Approved" state server-side, preventing spoofed release requests.

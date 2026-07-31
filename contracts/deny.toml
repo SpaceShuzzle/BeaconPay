@@ -1,4 +1,4 @@
-# cargo-deny configuration for ManageHub contracts
+# cargo-deny configuration for BeaconPay contracts
 # https://embarkstudios.github.io/cargo-deny/
 
 [advisories]

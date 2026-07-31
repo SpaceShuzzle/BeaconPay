@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HubSettings } from './entities/hub-settings.entity';
@@ -19,7 +24,7 @@ export class HubSettingsService implements OnModuleInit {
     if (count === 0) {
       await this.repo.save(
         this.repo.create({
-          hubName: 'ManageHub',
+          hubName: 'BeaconPay',
           timezone: 'Africa/Lagos',
           currency: 'NGN',
           vatRatePercent: 7.5,

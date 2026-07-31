@@ -1,4 +1,4 @@
-# ManageHub Monolith Split Plan
+# BeaconPay Monolith Split Plan
 
 ## Current State
 
@@ -8,6 +8,7 @@ All logic lives in a single `#[contract]` with a single `#[contractimpl]` block.
 ## Proposed Crate Extraction
 
 ### Group 1: `membership_token` (expand existing crate)
+
 **Modules:** `membership_token.rs` (1,614 lines), `allowance.rs` (160 lines), `fractionalization.rs` (337 lines)
 **New crate:** `contracts/membership_token/` (expand existing)
 
@@ -19,6 +20,7 @@ standalone contract; this expansion brings in the full feature set from the mono
 After extraction, these will be local to the crate.
 
 ### Group 2: `staking_rewards` (new crate)
+
 **Modules:** `staking.rs` (396 lines), `rewards.rs` (65 lines), `staking_errors.rs` (43 lines)
 **New crate:** `contracts/staking_rewards/`
 
@@ -30,6 +32,7 @@ types, and error handling but have minimal coupling to the rest of the monolith.
 the new crate.
 
 ### Group 3: `subscription_tier` (stub)
+
 **Modules:** `subscription.rs` (1,489 lines)
 **Proposed crate:** `contracts/subscription_tier/`
 
@@ -40,6 +43,7 @@ its own crate. It includes tier CRUD, promotions, feature access, analytics, and
 `types::*`. Would need shared types in `common_types`.
 
 ### Group 4: `attendance_batch` (stub)
+
 **Modules:** `attendance_log.rs` (531 lines), `batch.rs` (72 lines), `validation.rs` (22 lines)
 **Proposed crate:** `contracts/attendance_batch/`
 
@@ -48,6 +52,7 @@ Batch operations call into membership_token, so the interface boundary would nee
 cross-contract calls or trait abstractions.
 
 ### Group 5: `token_upgrade` (stub)
+
 **Modules:** `upgrade.rs` (430 lines), `migration.rs` (159 lines), `upgrade_errors.rs` (43 lines)
 **Proposed crate:** `contracts/token_upgrade/`
 
@@ -55,6 +60,7 @@ cross-contract calls or trait abstractions.
 for its dependency on `MembershipToken` type and `DataKey::Admin`.
 
 ### Group 6: `pause_control` (stub)
+
 **Modules:** `guards.rs` (130 lines), `pause_errors.rs` (32 lines)
 **Proposed crate:** `contracts/pause_control/`
 
@@ -81,6 +87,7 @@ shared across multiple contracts.
 ## Extraction Phases
 
 ### Phase 1 (This PR)
+
 - [x] Expand `membership_token` crate with full types from monolith
 - [x] Create `staking_rewards` crate
 - [x] Create stub crates for remaining groups
@@ -88,6 +95,7 @@ shared across multiple contracts.
 - [x] Document inter-module dependencies
 
 ### Phase 2 (Future)
+
 - [ ] Extract `subscription_tier` crate with full subscription logic
 - [ ] Extract `attendance_batch` crate
 - [ ] Extract `token_upgrade` crate
@@ -95,6 +103,7 @@ shared across multiple contracts.
 - [ ] Convert monolith to a thin facade that calls extracted crates
 
 ### Phase 3 (Future)
+
 - [ ] Replace cross-crate type references with shared `common_types`
 - [ ] Add integration tests across extracted crates
 - [ ] Remove monolith facade entirely
@@ -102,6 +111,7 @@ shared across multiple contracts.
 ## Shared Types (move to `common_types`)
 
 Types that are used across multiple proposed crates should live in `common_types`:
+
 - `MembershipStatus` (already in common_types)
 - `StakeInfo`, `StakingConfig`, `StakingTier`
 - `Subscription`, `SubscriptionTier`, `BillingCycle`
@@ -115,9 +125,9 @@ Types that are used across multiple proposed crates should live in `common_types
 
 ## Risks and Mitigations
 
-| Risk | Mitigation |
-|------|-----------|
-| Breaking existing deployments | Keep monolith as facade; new crates are additive |
-| Circular dependencies | Phase extraction carefully; use shared types crate |
-| Test coverage gaps | Run existing test suite after each extraction |
-| Storage key conflicts | Use crate-prefixed storage keys in new crates |
+| Risk                          | Mitigation                                         |
+| ----------------------------- | -------------------------------------------------- |
+| Breaking existing deployments | Keep monolith as facade; new crates are additive   |
+| Circular dependencies         | Phase extraction carefully; use shared types crate |
+| Test coverage gaps            | Run existing test suite after each extraction      |
+| Storage key conflicts         | Use crate-prefixed storage keys in new crates      |

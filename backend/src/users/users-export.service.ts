@@ -40,7 +40,7 @@ export class UsersExportService {
     });
 
     const workbook = new Workbook();
-    workbook.creator = 'ManageHub';
+    workbook.creator = 'BeaconPay';
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('Users');

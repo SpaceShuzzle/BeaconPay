@@ -85,7 +85,11 @@ export default function VerifyOtpPage() {
       storage.setUser(response.user);
 
       toast.success("Email verified successfully!");
-      router.push(response.user?.hasCompletedOnboarding === false ? "/onboarding" : "/dashboard");
+      router.push(
+        response.user?.hasCompletedOnboarding === false
+          ? "/onboarding"
+          : "/dashboard",
+      );
     } catch (error: any) {
       toast.error(error.message || "Invalid or expired OTP");
     } finally {
@@ -225,7 +229,7 @@ export default function VerifyOtpPage() {
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500">
-          <p>&copy; 2026 ManageHub. All rights reserved.</p>
+          <p>&copy; 2026 BeaconPay. All rights reserved.</p>
           <div className="mt-2 space-x-4">
             <a href="#" className="hover:text-gray-700">
               Privacy Policy

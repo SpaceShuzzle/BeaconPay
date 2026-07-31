@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generate TypeScript bindings for all ManageHub Soroban contracts.
+# Generate TypeScript bindings for all BeaconPay Soroban contracts.
 # Usage: ./generate.sh [--output-dir <path>]
 #
 # Prerequisites:

@@ -1,6 +1,6 @@
 {
-  "name": "ManageHub",
-  "short_name": "ManageHub",
+  "name": "BeaconPay",
+  "short_name": "BeaconPay",
   "description": "Manage your coworking hub — bookings, events, members.",
   "start_url": "/dashboard",
   "display": "standalone",

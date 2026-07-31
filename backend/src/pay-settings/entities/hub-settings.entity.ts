@@ -14,7 +14,7 @@ export class HubSettings {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, default: 'ManageHub' })
+  @Column({ type: 'varchar', length: 255, default: 'BeaconPay' })
   hubName: string;
 
   @Column({ type: 'text', nullable: true })

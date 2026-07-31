@@ -1,6 +1,6 @@
 use soroban_sdk::contracterror;
 
-/// ManageHub contract errors.
+/// BeaconPay contract errors.
 ///
 /// Error code range: 1000–1999
 #[contracterror]

@@ -64,7 +64,7 @@ export class InitialSchema1720000000000 implements MigrationInterface {
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_3a8d62e1a8bf91a9ec90cb00435" PRIMARY KEY ("id"))`,
       `CREATE TABLE "hub_settings" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(), "hubName" varchar(255) NOT NULL DEFAULT 'ManageHub',
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(), "hubName" varchar(255) NOT NULL DEFAULT 'BeaconPay',
         "address" text, "city" varchar(100), "country" varchar(100),
         "timezone" varchar(100) NOT NULL DEFAULT 'Africa/Lagos', "currency" varchar(3) NOT NULL DEFAULT 'NGN',
         "vatRatePercent" numeric(5,2) NOT NULL DEFAULT 7.5, "businessHours" jsonb,
@@ -195,9 +195,41 @@ export class InitialSchema1720000000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    const tables = ['workspace_logs', 'invoices', 'user_memberships', 'visitors', 'parking_spots', 'notifications', 'refresh_tokens', 'payments', 'bookings', 'newsletter_subscriber', 'contact_messages', 'hub_settings', 'membership_plans', 'resources', 'workspaces', 'users'];
-    for (const table of tables) await queryRunner.query(`DROP TABLE "${table}"`);
-    const enums = ['invoices_status_enum', 'user_memberships_status_enum', 'membership_plans_billingCycle_enum', 'visitors_status_enum', 'parking_spots_type_enum', 'notifications_type_enum', 'payments_status_enum', 'payments_provider_enum', 'bookings_status_enum', 'bookings_planType_enum', 'workspaces_type_enum', 'users_membershipStatus_enum', 'users_role_enum'];
+    const tables = [
+      'workspace_logs',
+      'invoices',
+      'user_memberships',
+      'visitors',
+      'parking_spots',
+      'notifications',
+      'refresh_tokens',
+      'payments',
+      'bookings',
+      'newsletter_subscriber',
+      'contact_messages',
+      'hub_settings',
+      'membership_plans',
+      'resources',
+      'workspaces',
+      'users',
+    ];
+    for (const table of tables)
+      await queryRunner.query(`DROP TABLE "${table}"`);
+    const enums = [
+      'invoices_status_enum',
+      'user_memberships_status_enum',
+      'membership_plans_billingCycle_enum',
+      'visitors_status_enum',
+      'parking_spots_type_enum',
+      'notifications_type_enum',
+      'payments_status_enum',
+      'payments_provider_enum',
+      'bookings_status_enum',
+      'bookings_planType_enum',
+      'workspaces_type_enum',
+      'users_membershipStatus_enum',
+      'users_role_enum',
+    ];
     for (const type of enums) await queryRunner.query(`DROP TYPE "${type}"`);
   }
 }

@@ -1,9 +1,9 @@
 #![no_std]
 
-//! Common types for ManageHub contracts.
+//! Common types for BeaconPay contracts.
 //!
 //! This crate provides shared enums and structs to ensure consistency
-//! across all ManageHub smart contracts.
+//! across all BeaconPay smart contracts.
 
 pub mod errors;
 mod types;
