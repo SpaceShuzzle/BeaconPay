@@ -27,20 +27,41 @@ fn setup_initialized_env() -> (Env, Address, Address, Address, Address) {
 fn test_initialize() {
     let (env, contract_id, admin, _, _) = setup_test_env();
 
+    // Act: Initialize the contract
     let result = env.as_contract(&contract_id, || {
         AccessControlModule::initialize(&env, admin.clone(), None)
     });
-    assert!(result.is_ok());
 
-    // Check admin role was set
+    assert!(
+        result.is_ok(),
+        "Contract initialization should succeed"
+    );
+
+    // Assert: Contract state after initialization
     env.as_contract(&contract_id, || {
+        // Verify initialization state
+        assert!(
+            AccessControlModule::is_initialized(&env),
+            "Contract should be marked as initialized"
+        );
+
+        // Verify contract is active by default
+        assert!(
+            !AccessControlModule::is_paused(&env),
+            "Contract should not be paused after initialization"
+        );
+
+        // Verify admin role assignment
         assert_eq!(
             AccessControlModule::get_role(&env, admin.clone()),
-            UserRole::Admin
+            UserRole::Admin,
+            "Initializer should be assigned the Admin role"
         );
-        assert!(AccessControlModule::is_admin(&env, admin.clone()));
-        assert!(AccessControlModule::is_initialized(&env));
-        assert!(!AccessControlModule::is_paused(&env));
+
+        assert!(
+            AccessControlModule::is_admin(&env, admin.clone()),
+            "Initializer should be recognized as an admin"
+        );
     });
 }
 

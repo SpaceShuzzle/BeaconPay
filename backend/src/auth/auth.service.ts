@@ -28,7 +28,6 @@ import { Setup2faDto } from './dto/setup-2fa.dto';
 import { VerifyTotpDto } from './dto/verify-totp.dto';
 import { UseBackupCodeDto } from './dto/use-backup-code.dto';
 import { Disable2faDto } from './dto/disable-2fa.dto';
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -43,85 +42,91 @@ export class AuthService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto) {
-    const existingUser = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
+    const user = await this.createAccount(createUserDto, UserRole.USER, true);
 
-    if (existingUser) {
-      throw new ConflictException(UserMessages.EMAIL_ALREADY_EXIST);
-    }
-
-    const validPassword = this.userHelper.isValidPassword(
-      createUserDto.password,
-    );
-    if (!validPassword) {
-      throw new ConflictException(UserMessages.IS_VALID_PASSWORD);
-    }
-    const hashedPassword = await this.userHelper.hashPassword(
-      createUserDto.password,
-    );
-    const verificationCode = this.userHelper.generateVerificationCode();
-    const expiration = moment().add(10, 'minutes').toDate();
-    const newUser = this.userRepository.create({
-      email: createUserDto.email,
-      firstname: createUserDto.firstname,
-      lastname: createUserDto.lastname,
-      password: hashedPassword,
-      role: UserRole.USER,
-      verificationCode: verificationCode,
-      verificationCodeExpiresAt: expiration,
-      isVerified: false,
-    });
-    await this.userRepository.save(newUser);
-
-    await this.emailService.sendVerificationEmail(
-      newUser.email,
-      verificationCode,
-      `${newUser.firstname} ${newUser.lastname}`,
-    );
-
-    const accessToken = this.jwtHelper.generateAccessToken(newUser);
-
-    return {
-      user: this.userHelper.formatUserResponse(newUser),
-      accessToken,
-    };
+    return this.buildAuthResponse(user);
   }
 
   async createAdminUser(createUserDto: CreateUserDto) {
+    const user = await this.createAccount(createUserDto, UserRole.ADMIN, false);
+
+    return this.buildAuthResponse(user);
+  }
+
+  /**
+   * Creates a user account.
+   */
+  private async createAccount(
+    dto: CreateUserDto,
+    role: UserRole,
+    sendVerificationEmail: boolean,
+  ): Promise<User> {
+    await this.ensureEmailDoesNotExist(dto.email);
+
+    const hashedPassword = await this.validateAndHashPassword(dto.password);
+
+    const user = this.userRepository.create({
+      email: dto.email,
+      firstname: dto.firstname,
+      lastname: dto.lastname,
+      password: hashedPassword,
+      role,
+      ...(sendVerificationEmail && {
+        verificationCode: this.userHelper.generateVerificationCode(),
+        verificationCodeExpiresAt: moment().add(10, 'minutes').toDate(),
+        isVerified: false,
+      }),
+    });
+
+    await this.userRepository.save(user);
+
+    if (sendVerificationEmail) {
+      await this.emailService.sendVerificationEmail(
+        user.email,
+        user.verificationCode!,
+        `${user.firstname} ${user.lastname}`,
+      );
+    }
+
+    return user;
+  }
+
+  /**
+   * Ensures the email is unique.
+   */
+  private async ensureEmailDoesNotExist(email: string): Promise<void> {
     const existingUser = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
+      where: { email },
     });
 
     if (existingUser) {
       throw new ConflictException(UserMessages.EMAIL_ALREADY_EXIST);
     }
+  }
 
-    const validPassword = this.userHelper.isValidPassword(
-      createUserDto.password,
-    );
-    if (!validPassword) {
+  /**
+   * Validates and hashes the password.
+   */
+  private async validateAndHashPassword(
+    password: string,
+  ): Promise<string> {
+    if (!this.userHelper.isValidPassword(password)) {
       throw new ConflictException(UserMessages.IS_VALID_PASSWORD);
     }
-    const hashedPassword = await this.userHelper.hashPassword(
-      createUserDto.password,
-    );
-    const newUser = this.userRepository.create({
-      email: createUserDto.email,
-      firstname: createUserDto.firstname,
-      lastname: createUserDto.lastname,
-      password: hashedPassword,
-      role: UserRole.ADMIN,
-    });
-    await this.userRepository.save(newUser);
 
-    const accessToken = this.jwtHelper.generateAccessToken(newUser);
+    return this.userHelper.hashPassword(password);
+  }
 
+  /**
+   * Builds the authentication response.
+   */
+  private buildAuthResponse(user: User) {
     return {
-      user: this.userHelper.formatUserResponse(newUser),
-      accessToken,
+      user: this.userHelper.formatUserResponse(user),
+      accessToken: this.jwtHelper.generateAccessToken(user),
     };
   }
+
 
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { email, otp } = verifyOtpDto;
