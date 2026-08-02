@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useGetAllBookings } from "@/lib/react-query/hooks/admin/bookings/useGetAllBookings";
 import { useUpdateBookingStatus } from "@/lib/react-query/hooks/admin/bookings/useUpdateBookingStatus";
 import { BookingStatus } from "@/lib/types/booking";
-import { AlertTriangle, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
 
 type ActionType = "confirm" | "cancel" | "complete";
 
@@ -22,6 +28,15 @@ const STATUS_COLORS: Record<BookingStatus, string> = {
   CONFIRMED: "bg-blue-50 text-blue-700",
   COMPLETED: "bg-emerald-50 text-emerald-600",
   CANCELLED: "bg-red-50 text-red-600",
+};
+
+// Single source of truth for how each action reads in the <select> and in
+// the inline confirm prompt, so "Confirm" the button never disagrees with
+// "Confirm" the action a row is actually about to take.
+const ACTION_LABELS: Record<ActionType, string> = {
+  confirm: "Confirm",
+  complete: "Complete",
+  cancel: "Cancel",
 };
 
 // Destructive actions get a visually distinct confirm button so an admin
@@ -50,9 +65,11 @@ export default function AdminBookingsPage() {
     id: string;
     action: ActionType;
   } | null>(null);
-  // Tracks exactly which booking row is currently being mutated, so other
-  // rows stay interactive and only the affected row shows a loading state.
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  // Tracks every booking row currently being mutated (not just one), so an
+  // admin can confirm row A, then — while that request is still in flight —
+  // open and confirm row B, and both rows correctly show their own loading
+  // state independently instead of the second click clobbering the first.
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
 
   const {
@@ -68,28 +85,48 @@ export default function AdminBookingsPage() {
   const bookings = data?.data ?? [];
   const meta = data?.meta;
 
+  // If the current page falls out of range after a mutation shrinks the
+  // result set (e.g. cancelling the only booking on the last page), snap
+  // back to the last valid page instead of showing an empty page with no
+  // way back except manually clicking "previous".
+  useEffect(() => {
+    if (meta && meta.totalPages > 0 && page > meta.totalPages) {
+      setPage(meta.totalPages);
+    }
+  }, [meta, page]);
+
   const handleFilterChange = (value: BookingStatus | "") => {
     setStatusFilter(value);
     setPage(1);
     setConfirmAction(null);
+    setActionError(null);
   };
 
   const handleAction = async (id: string, action: ActionType) => {
     setActionError(null);
-    setPendingId(id);
+    setPendingIds((prev) => new Set(prev).add(id));
     try {
       await updateStatus.mutateAsync({ id, action });
-      setConfirmAction(null);
+      // Only clear the confirm prompt if it's still pointed at this same
+      // row/action — an admin could have already dismissed it or moved on
+      // to confirming a different row while this request was in flight.
+      setConfirmAction((current) =>
+        current?.id === id && current.action === action ? null : current
+      );
     } catch (err) {
-      // Keep confirmAction open so the admin can retry without re-selecting
-      // the action from the dropdown.
+      // Keep confirmAction open (if it's still this row) so the admin can
+      // retry without re-selecting the action from the dropdown.
       setActionError(
         err instanceof Error
           ? err.message
           : "Failed to update booking status. Please try again."
       );
     } finally {
-      setPendingId(null);
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -168,7 +205,18 @@ export default function AdminBookingsPage() {
       ) : bookings.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BookOpen className="w-10 h-10 text-gray-200 mb-4" />
-          <p className="text-sm font-medium text-gray-500">No bookings found</p>
+          <p className="text-sm font-medium text-gray-500">
+            No {statusFilter ? STATUSES.find((s) => s.value === statusFilter)?.label.toLowerCase() : ""} bookings found
+          </p>
+          {statusFilter && (
+            <button
+              type="button"
+              onClick={() => handleFilterChange("")}
+              className="mt-3 text-xs font-medium text-gray-600 underline underline-offset-2"
+            >
+              Clear filter
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -176,6 +224,7 @@ export default function AdminBookingsPage() {
             className={`bg-white rounded-xl border border-gray-100 overflow-hidden transition-opacity ${
               isFetching ? "opacity-60" : "opacity-100"
             }`}
+            aria-busy={isFetching}
           >
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -192,7 +241,7 @@ export default function AdminBookingsPage() {
                 </thead>
                 <tbody>
                   {bookings.map((b) => {
-                    const isRowPending = pendingId === b.id;
+                    const isRowPending = pendingIds.has(b.id);
                     const isConfirmingThisRow = confirmAction?.id === b.id;
                     const statusColor =
                       STATUS_COLORS[b.status] ?? "bg-gray-50 text-gray-600";
@@ -231,6 +280,9 @@ export default function AdminBookingsPage() {
                         <td className="px-5 py-3.5">
                           {isConfirmingThisRow ? (
                             <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500">
+                                {ACTION_LABELS[confirmAction.action]}?
+                              </span>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -238,7 +290,7 @@ export default function AdminBookingsPage() {
                                 }
                                 disabled={isRowPending}
                                 aria-label={`Confirm ${confirmAction.action} for booking ${b.id.slice(0, 8)}`}
-                                className={`text-xs px-2.5 py-1 rounded-md text-white disabled:opacity-50 ${
+                                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md text-white disabled:opacity-50 ${
                                   DESTRUCTIVE_ACTIONS.includes(
                                     confirmAction.action
                                   )
@@ -246,7 +298,10 @@ export default function AdminBookingsPage() {
                                     : "bg-gray-900"
                                 }`}
                               >
-                                {isRowPending ? "..." : "Confirm"}
+                                {isRowPending && (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                )}
+                                {isRowPending ? "Working…" : "Yes"}
                               </button>
                               <button
                                 type="button"
@@ -275,17 +330,17 @@ export default function AdminBookingsPage() {
                               }}
                             >
                               <option value="" disabled>
-                                Action
+                                {isRowPending ? "Working…" : "Action"}
                               </option>
                               {b.status === "PENDING" && (
-                                <option value="confirm">Confirm</option>
+                                <option value="confirm">{ACTION_LABELS.confirm}</option>
                               )}
                               {b.status === "CONFIRMED" && (
-                                <option value="complete">Complete</option>
+                                <option value="complete">{ACTION_LABELS.complete}</option>
                               )}
                               {(b.status === "PENDING" ||
                                 b.status === "CONFIRMED") && (
-                                <option value="cancel">Cancel</option>
+                                <option value="cancel">{ACTION_LABELS.cancel}</option>
                               )}
                             </select>
                           )}

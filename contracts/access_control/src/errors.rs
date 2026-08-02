@@ -4,7 +4,7 @@ use soroban_sdk::contracterror;
 ///
 /// Error code range: 2000–2999
 #[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
 #[repr(u32)]
 pub enum AccessControlError {
     /// Caller is not authorized to perform this action
@@ -124,6 +124,14 @@ impl AccessControlError {
         }
     }
 
+    /// Get the raw numeric error code (2000–2999).
+    ///
+    /// Equivalent to `self as u32`, but named so call sites don't need an
+    /// inline cast, and so the range invariant is documented in one place.
+    pub fn code(&self) -> u32 {
+        *self as u32
+    }
+
     /// Check if this is a critical error that should halt execution
     pub fn is_critical(&self) -> bool {
         matches!(
@@ -135,7 +143,8 @@ impl AccessControlError {
         )
     }
 
-    /// Check if this error is related to permissions
+    /// Check if this error is related to permissions (role/admin/membership
+    /// checks failing on the caller).
     pub fn is_permission_error(&self) -> bool {
         matches!(
             self,
@@ -143,6 +152,7 @@ impl AccessControlError {
                 | AccessControlError::AdminRequired
                 | AccessControlError::InsufficientRole
                 | AccessControlError::InsufficientMembership
+                | AccessControlError::NotMultisigAdmin
         )
     }
 
@@ -156,6 +166,46 @@ impl AccessControlError {
                 | AccessControlError::InvalidTokenBalance
         )
     }
+
+    /// Check if this error is related to proposal lifecycle (creation,
+    /// approval/rejection, execution, expiry, time-locks).
+    pub fn is_proposal_error(&self) -> bool {
+        matches!(
+            self,
+            AccessControlError::InsufficientApprovals
+                | AccessControlError::ProposalNotFound
+                | AccessControlError::ProposalAlreadyExecuted
+                | AccessControlError::ProposalExpired
+                | AccessControlError::TimeLockActive
+                | AccessControlError::AlreadyApproved
+                | AccessControlError::AlreadyRejected
+                | AccessControlError::CannotExecuteProposal
+                | AccessControlError::MaxProposalsReached
+                | AccessControlError::InvalidProposalType
+                | AccessControlError::ProposalRejected
+        )
+    }
+
+    /// Check if this error is related to multisig configuration or admin
+    /// set management (as opposed to an individual proposal's lifecycle).
+    pub fn is_multisig_error(&self) -> bool {
+        matches!(
+            self,
+            AccessControlError::MultisigNotEnabled
+                | AccessControlError::InvalidMultisigConfig
+                | AccessControlError::ThresholdTooHigh
+                | AccessControlError::ThresholdTooLow
+                | AccessControlError::CannotRemoveLastAdmin
+                | AccessControlError::DuplicateAdmin
+                | AccessControlError::NotMultisigAdmin
+        )
+    }
+}
+
+impl core::fmt::Display for AccessControlError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "[{}] {}", self.code(), self.description())
+    }
 }
 
 /// Result type for access control operations
@@ -165,11 +215,63 @@ pub type AccessControlResult<T> = Result<T, AccessControlError>;
 mod tests {
     use super::*;
 
+    /// All variants in declaration order, kept in sync manually — the
+    /// exhaustive match in `description()` will fail to compile if a new
+    /// variant is added without a description, but this list is what lets
+    /// the tests below iterate every variant without maintaining a second
+    /// giant match by hand.
+    const ALL_VARIANTS: &[AccessControlError] = &[
+        AccessControlError::Unauthorized,
+        AccessControlError::AdminRequired,
+        AccessControlError::InvalidRole,
+        AccessControlError::InsufficientRole,
+        AccessControlError::RoleAssignmentFailed,
+        AccessControlError::MembershipTokenNotSet,
+        AccessControlError::MembershipTokenCallFailed,
+        AccessControlError::InsufficientMembership,
+        AccessControlError::InvalidTokenBalance,
+        AccessControlError::NotInitialized,
+        AccessControlError::ConfigurationError,
+        AccessControlError::StorageError,
+        AccessControlError::InvalidAddress,
+        AccessControlError::RoleHierarchyViolation,
+        AccessControlError::MaxRolesExceeded,
+        AccessControlError::ContractPaused,
+        AccessControlError::MultisigNotEnabled,
+        AccessControlError::InsufficientApprovals,
+        AccessControlError::ProposalNotFound,
+        AccessControlError::ProposalAlreadyExecuted,
+        AccessControlError::ProposalExpired,
+        AccessControlError::TimeLockActive,
+        AccessControlError::AlreadyApproved,
+        AccessControlError::AlreadyRejected,
+        AccessControlError::CannotExecuteProposal,
+        AccessControlError::MaxProposalsReached,
+        AccessControlError::InvalidProposalType,
+        AccessControlError::InvalidMultisigConfig,
+        AccessControlError::ThresholdTooHigh,
+        AccessControlError::ThresholdTooLow,
+        AccessControlError::CannotRemoveLastAdmin,
+        AccessControlError::DuplicateAdmin,
+        AccessControlError::NotMultisigAdmin,
+        AccessControlError::ProposalRejected,
+    ];
+
     #[test]
     fn test_error_descriptions() {
         assert!(!AccessControlError::Unauthorized.description().is_empty());
         assert!(!AccessControlError::AdminRequired.description().is_empty());
         assert!(!AccessControlError::InvalidRole.description().is_empty());
+    }
+
+    #[test]
+    fn test_all_variants_have_nonempty_descriptions() {
+        for variant in ALL_VARIANTS {
+            assert!(
+                !variant.description().is_empty(),
+                "{variant:?} has an empty description"
+            );
+        }
     }
 
     #[test]
@@ -182,14 +284,55 @@ mod tests {
 
         assert!(AccessControlError::MembershipTokenNotSet.is_membership_error());
         assert!(!AccessControlError::Unauthorized.is_membership_error());
+
+        assert!(AccessControlError::ProposalExpired.is_proposal_error());
+        assert!(!AccessControlError::Unauthorized.is_proposal_error());
+
+        assert!(AccessControlError::ThresholdTooHigh.is_multisig_error());
+        assert!(!AccessControlError::ProposalExpired.is_multisig_error());
+    }
+
+    #[test]
+    fn test_categories_are_not_mutually_exclusive_by_design() {
+        // NotMultisigAdmin is deliberately both a permission error (it's an
+        // authorization failure on the caller) and a multisig error (it's
+        // scoped to the multisig admin set) — documenting that overlap here
+        // so a future refactor doesn't "fix" it into a single category.
+        assert!(AccessControlError::NotMultisigAdmin.is_permission_error());
+        assert!(AccessControlError::NotMultisigAdmin.is_multisig_error());
     }
 
     #[test]
     fn test_error_codes() {
         // Ensure error codes are in the 2000-2999 range
-        assert_eq!(AccessControlError::Unauthorized as u32, 2000);
-        assert_eq!(AccessControlError::AdminRequired as u32, 2001);
-        assert_eq!(AccessControlError::ContractPaused as u32, 2015);
-        assert_eq!(AccessControlError::ProposalRejected as u32, 2033);
+        assert_eq!(AccessControlError::Unauthorized.code(), 2000);
+        assert_eq!(AccessControlError::AdminRequired.code(), 2001);
+        assert_eq!(AccessControlError::ContractPaused.code(), 2015);
+        assert_eq!(AccessControlError::ProposalRejected.code(), 2033);
+
+        for variant in ALL_VARIANTS {
+            assert!(
+                (2000..3000).contains(&variant.code()),
+                "{variant:?} code {} is outside the 2000-2999 range",
+                variant.code()
+            );
+        }
+    }
+
+    #[test]
+    fn test_error_codes_are_unique() {
+        for (i, a) in ALL_VARIANTS.iter().enumerate() {
+            for b in &ALL_VARIANTS[i + 1..] {
+                assert_ne!(a.code(), b.code(), "duplicate error code between {a:?} and {b:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_display_includes_code_and_description() {
+        let err = AccessControlError::ProposalExpired;
+        let rendered = format!("{err}");
+        assert!(rendered.contains("2020"));
+        assert!(rendered.contains(err.description()));
     }
 }
