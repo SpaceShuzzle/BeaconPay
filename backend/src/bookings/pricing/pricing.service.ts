@@ -1,30 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PlanType } from '../enums/plan-type.enum';
 
-const PLAN_WORKING_HOURS = 8;
+const HOURS_PER_WORKDAY = 8;
+const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const PLAN_DAYS: Record<PlanType, number> = {
-  [PlanType.DAILY]: 1,
-  [PlanType.WEEKLY]: 5,
-  [PlanType.MONTHLY]: 22,
-  [PlanType.QUARTERLY]: 66,
-  [PlanType.YEARLY]: 264,
-};
-
-const PLAN_DISCOUNT: Record<PlanType, number> = {
-  [PlanType.DAILY]: 0,
-  [PlanType.WEEKLY]: 0.05,
-  [PlanType.MONTHLY]: 0.1,
-  [PlanType.QUARTERLY]: 0.15,
-  [PlanType.YEARLY]: 0.2,
+const PLAN_CONFIG: Readonly<
+  Record<
+    PlanType,
+    {
+      days: number;
+      discount: number;
+    }
+  >
+> = {
+  [PlanType.DAILY]: {
+    days: 1,
+    discount: 0,
+  },
+  [PlanType.WEEKLY]: {
+    days: 5,
+    discount: 0.05,
+  },
+  [PlanType.MONTHLY]: {
+    days: 22,
+    discount: 0.10,
+  },
+  [PlanType.QUARTERLY]: {
+    days: 66,
+    discount: 0.15,
+  },
+  [PlanType.YEARLY]: {
+    days: 264,
+    discount: 0.20,
+  },
 };
 
 @Injectable()
 export class PricingService {
   /**
-   * Calculate total booking amount in kobo.
-   * For DAILY plan the actual calendar days between startDate and endDate are used.
-   * For all other plans the fixed multipliers are used.
+   * Calculates the booking amount (in kobo).
+   *
+   * - Daily plans use the actual number of calendar days.
+   * - All other plans use predefined working-day equivalents.
    */
   calculateAmount(
     hourlyRateKobo: number,
@@ -33,26 +50,92 @@ export class PricingService {
     startDate: string,
     endDate: string,
   ): number {
-    let days: number;
+    this.validateInputs(hourlyRateKobo, seatCount);
 
-    if (planType === PlanType.DAILY) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const diffMs = end.getTime() - start.getTime();
-      days = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-    } else {
-      days = PLAN_DAYS[planType];
-    }
+    const billableDays =
+      planType === PlanType.DAILY
+        ? this.calculateCalendarDays(startDate, endDate)
+        : this.getPlanConfig(planType).days;
 
-    const gross = hourlyRateKobo * PLAN_WORKING_HOURS * days * seatCount;
-    const discount = PLAN_DISCOUNT[planType];
-    return Math.floor(gross * (1 - discount));
+    const { discount } = this.getPlanConfig(planType);
+
+    const grossAmount =
+      hourlyRateKobo * HOURS_PER_WORKDAY * billableDays * seatCount;
+
+    return Math.floor(grossAmount * (1 - discount));
   }
 
-  getPlanSummary(planType: PlanType): { days: number; discountPct: number } {
+  /**
+   * Returns the configured duration and discount for a plan.
+   */
+  getPlanSummary(planType: PlanType): {
+    days: number;
+    discountPct: number;
+  } {
+    const config = this.getPlanConfig(planType);
+
     return {
-      days: PLAN_DAYS[planType],
-      discountPct: PLAN_DISCOUNT[planType] * 100,
+      days: config.days,
+      discountPct: config.discount * 100,
     };
+  }
+
+  /**
+   * Returns configuration for a pricing plan.
+   */
+  private getPlanConfig(planType: PlanType) {
+    const config = PLAN_CONFIG[planType];
+
+    if (!config) {
+      throw new BadRequestException('Invalid plan type.');
+    }
+
+    return config;
+  }
+
+  /**
+   * Calculates the number of billable calendar days.
+   */
+  private calculateCalendarDays(
+    startDate: string,
+    endDate: string,
+  ): number {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid booking dates.');
+    }
+
+    if (end < start) {
+      throw new BadRequestException(
+        'End date cannot be before start date.',
+      );
+    }
+
+    const difference =
+      (end.getTime() - start.getTime()) / MILLISECONDS_PER_DAY;
+
+    return Math.max(1, Math.ceil(difference));
+  }
+
+  /**
+   * Validates pricing inputs.
+   */
+  private validateInputs(
+    hourlyRateKobo: number,
+    seatCount: number,
+  ): void {
+    if (hourlyRateKobo <= 0) {
+      throw new BadRequestException(
+        'Hourly rate must be greater than zero.',
+      );
+    }
+
+    if (seatCount <= 0) {
+      throw new BadRequestException(
+        'Seat count must be greater than zero.',
+      );
+    }
   }
 }
