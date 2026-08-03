@@ -1,142 +1,49 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Providers from "@/providers/Providers";
-import "./globals.css";
-import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-import Script from "next/script";
+import { Analytics } from '@vercel/analytics/next'
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  manifest: "/manifest.json",
-  viewport: "width=device-width, initial-scale=1",
-  title: {
-    default: "BeaconPay - Smart Hub & Workspace Management",
-    template: "%s | BeaconPay",
-  },
-  description:
-    "Smart Hub & Workspace Management System for modern teams. Streamline operations, manage resources, and boost productivity with our comprehensive management platform.",
-  keywords: [
-    "workspace management",
-    "hub management",
-    "team productivity",
-    "resource management",
-    "smart workspace",
-    "collaboration tools",
-    "project management",
-  ],
-  authors: [{ name: "BeaconPay Team" }],
-  creator: "BeaconPay",
-  publisher: "BeaconPay",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://BeaconPay.app",
-  ),
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "/",
-    title: "BeaconPay - Smart Hub & Workspace Management",
-    description:
-      "Smart Hub & Workspace Management System for modern teams. Streamline operations, manage resources, and boost productivity with our comprehensive management platform.",
-    siteName: "BeaconPay",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "BeaconPay - Smart Hub & Workspace Management",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "BeaconPay - Smart Hub & Workspace Management",
-    description:
-      "Smart Hub & Workspace Management System for modern teams. Streamline operations, manage resources, and boost productivity.",
-    images: ["/og-image.png"],
-    creator: "@BeaconPays",
-    site: "@BeaconPays",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  title: 'BeaconPay',
+  description: 'Premium fintech collaboration platform powered by Stellar',
+  generator: 'v0.app',
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-    other: [
+    icon: [
       {
-        rel: "icon",
-        type: "image/png",
-        sizes: "32x32",
-        url: "/favicon-32x32.png",
+        url: '/icon-light-32x32.png',
+        media: '(prefers-color-scheme: light)',
       },
       {
-        rel: "icon",
-        type: "image/png",
-        sizes: "16x16",
-        url: "/favicon-16x16.png",
+        url: '/icon-dark-32x32.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/icon.svg',
+        type: 'image/svg+xml',
       },
     ],
+    apple: '/apple-icon.png',
   },
-  verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
-  },
-};
+}
+
+export const viewport: Viewport = {
+  colorScheme: 'dark',
+  themeColor: [{ media: '(prefers-color-scheme: dark)', color: '#16151a' }],
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Providers>{children}</Providers>
-          <Toaster richColors position="top-right" />
-        </ThemeProvider>
-        <Script id="service-worker-registration">
-          {`
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
-                  console.log('Service Worker registered with scope:', registration.scope);
-                }).catch(error => {
-                  console.error('Service Worker registration failed:', error);
-                });
-              });
-            }
-          `}
-        </Script>
+    <html lang="en" className="dark bg-background">
+      <body className={`${inter.className} antialiased`}>
+        {children}
+        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
-  );
+  )
 }
