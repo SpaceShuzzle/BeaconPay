@@ -15,7 +15,7 @@ export class NpsResponse {
   @Column()
   userId: string;
 
-  @Column({ type: 'int', min: 0, max: 10 })
+  @Column({ type: 'int' })
   score: number;
 
   @Column({ type: 'text', nullable: true })

@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsPositive, IsUUID, Max } from 'class-validator';
+import { IsEnum, IsOptional, IsPositive, IsString, IsUUID, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { InvoiceStatus } from '../enums/invoice-status.enum';

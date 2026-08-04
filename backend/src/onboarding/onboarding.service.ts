@@ -28,7 +28,7 @@ export class OnboardingService {
     const bookingCount = await this.bookings.count({ where: { userId } });
 
     const steps: OnboardingStep[] = [
-      { key: 'verified_email', label: 'Verify your email', done: !!user.emailVerified },
+      { key: 'verified_email', label: 'Verify your email', done: !!user.isVerified },
       { key: 'completed_profile', label: 'Complete your profile', done: this.profileComplete(user) },
       { key: 'first_booking', label: 'Make your first booking', done: bookingCount > 0 },
     ];
@@ -42,11 +42,11 @@ export class OnboardingService {
   }
 
   async dismiss(userId: string): Promise<void> {
-    await this.users.update(userId, { onboardingDismissedAt: new Date() } as Partial<User>);
+    await this.users.update(userId, { onboardingDismissedAt: new Date() });
   }
 
   private profileComplete(user: User): boolean {
-    const fields = [user.firstName, user.lastName, user.email, (user as Record<string,unknown>)['phone']];
+    const fields = [user.firstname, user.lastname, user.email, user.phone];
     const filled = fields.filter(Boolean).length;
     return filled / fields.length >= 0.8;
   }

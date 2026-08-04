@@ -92,6 +92,9 @@ export class User {
   @Column({ default: false })
   isSuspended: boolean;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  onboardingDismissedAt?: Date;
+
   @Column({ nullable: true, type: 'varchar', length: 500 })
   profilePicture?: string;
 

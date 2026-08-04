@@ -24,7 +24,7 @@ export class OccupancyHeatmapService {
   async getHeatmap(from: Date, to: Date, totalSeats = 1): Promise<OccupancyHeatmap> {
     const records = await this.logs
       .createQueryBuilder('log')
-      .where('log.checkInAt >= :from AND log.checkInAt <= :to', { from, to })
+      .where('log.checkedInAt >= :from AND log.checkedInAt <= :to', { from, to })
       .getMany();
 
     // 7 days x 24 hours accumulator: [sum, count]
@@ -33,8 +33,8 @@ export class OccupancyHeatmapService {
     );
 
     for (const log of records) {
-      const start = new Date(log.checkInAt);
-      const end = log.checkOutAt ? new Date(log.checkOutAt) : new Date(start.getTime() + 3600_000);
+      const start = new Date(log.checkedInAt);
+      const end = log.checkedOutAt ? new Date(log.checkedOutAt) : new Date(start.getTime() + 3600_000);
       let cur = new Date(start);
       while (cur < end) {
         const day = cur.getDay(); // 0=Sun

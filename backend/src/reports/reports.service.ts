@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Booking } from '../bookings/entities/booking.entity';
+import { BookingStatus } from '../bookings/enums/booking-status.enum';
 
 @Injectable()
 export class ReportsService {
@@ -20,8 +21,8 @@ export class ReportsService {
     return {
       summary: {
         total: bookings.length,
-        confirmed: bookings.filter((b) => b.status === 'CONFIRMED').length,
-        cancelled: bookings.filter((b) => b.status === 'CANCELLED').length,
+        confirmed: bookings.filter((b) => b.status === BookingStatus.CONFIRMED).length,
+        cancelled: bookings.filter((b) => b.status === BookingStatus.CANCELLED).length,
       },
       data: grouped,
     };

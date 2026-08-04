@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Lead } from './lead.entity';
+import { Lead } from './entities/lead.entity';
+import type { LeadStage, LeadSource } from './entities/lead.entity';
 
-export type LeadStage = 'NEW' | 'CONTACTED' | 'TOURED' | 'NEGOTIATING' | 'WON' | 'LOST';
-export type LeadSource = 'CONTACT_FORM' | 'TOUR' | 'MANUAL';
+export type { LeadStage, LeadSource };
 
 @Injectable()
 export class LeadsService {

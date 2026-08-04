@@ -29,6 +29,7 @@ import { Roles } from '../auth/decorators/roles.decorators';
 import { UserRole } from '../users/enums/userRoles.enum';
 import { GetCurrentUser } from '../auth/decorators/getCurrentUser.decorator';
 import { PlanType } from './enums/plan-type.enum';
+import { BookingStatus } from './enums/booking-status.enum';
 import { Public } from '../auth/decorators/public.decorator';
 import { BookingsExportService } from './bookings-export.service';
 
@@ -171,7 +172,8 @@ export class BookingsController {
     const csv = await this.bookingsExportService.exportBookingsCsv({
       startDate,
       endDate,
-      status,
+      // Validated inside the export service (throws 400 on invalid values).
+      status: status as BookingStatus,
     });
     res.set({
       'Content-Type': 'text/csv',

@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Booking, BookingStatus } from './entities/booking.entity';
+import { Booking } from './entities/booking.entity';
+import { BookingStatus } from './enums/booking-status.enum';
 import { Workbook } from 'exceljs';
 import { Parser } from 'json2csv';
 
