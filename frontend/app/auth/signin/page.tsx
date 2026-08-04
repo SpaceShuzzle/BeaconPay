@@ -1,10 +1,96 @@
 'use client'
 
+import { useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Zap, Mail, Lock, ArrowRight } from 'lucide-react'
+import { Zap, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react'
+
+interface FormErrors {
+  email?: string
+  password?: string
+}
+
+function isValidEmail(value: string): boolean {
+  // Deliberately loose — this only needs to catch obviously-wrong input
+  // client-side ("no @", empty string). The server is the source of truth
+  // for whether an email is actually valid/registered.
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
 
 export default function SignInPage() {
+  const router = useRouter()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [socialLoading, setSocialLoading] = useState<'google' | 'github' | null>(null)
+
+  function validate(): boolean {
+    const errors: FormErrors = {}
+    if (!email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!isValidEmail(email)) {
+      errors.email = 'Enter a valid email address'
+    }
+    if (!password) {
+      errors.password = 'Password is required'
+    }
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setFormError(null)
+
+    if (!validate()) return
+
+    setIsSubmitting(true)
+    try {
+      // TODO: replace with your actual auth call (NextAuth signIn(),
+      // a server action, etc.) — this assumes a JSON API route that
+      // returns 401 with { message } on bad credentials.
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, rememberMe }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.message || 'Invalid email or password')
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } catch (err) {
+      setFormError(
+        err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleSocialSignIn(provider: 'google' | 'github') {
+    setFormError(null)
+    setSocialLoading(provider)
+    try {
+      // TODO: replace with your actual OAuth flow, e.g.
+      // signIn(provider, { callbackUrl: '/dashboard' }) from next-auth/react
+      window.location.href = `/api/auth/signin/${provider}`
+    } catch {
+      setFormError(`Couldn't start sign-in with ${provider === 'google' ? 'Google' : 'GitHub'}.`)
+      setSocialLoading(null)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Branding */}
@@ -40,8 +126,18 @@ export default function SignInPage() {
             <p className="text-muted-foreground">Sign in to your BeaconPay account to manage payments</p>
           </div>
 
+          {formError && (
+            <div
+              role="alert"
+              className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* Form */}
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                 Email Address
@@ -51,10 +147,23 @@ export default function SignInPage() {
                 <input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+                  disabled={isSubmitting}
+                  className={`w-full pl-10 pr-4 py-2 bg-card border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 ${
+                    fieldErrors.email ? 'border-destructive' : 'border-border'
+                  }`}
                 />
               </div>
+              {fieldErrors.email && (
+                <p id="email-error" className="mt-1.5 text-xs text-destructive">
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -65,26 +174,58 @@ export default function SignInPage() {
                 <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+                  disabled={isSubmitting}
+                  className={`w-full pl-10 pr-10 py-2 bg-card border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 ${
+                    fieldErrors.password ? 'border-destructive' : 'border-border'
+                  }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  disabled={isSubmitting}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground disabled:opacity-60"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+              {fieldErrors.password && (
+                <p id="password-error" className="mt-1.5 text-xs text-destructive">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-muted-foreground hover:text-foreground cursor-pointer">
-                <input type="checkbox" className="w-4 h-4" />
+              <label
+                htmlFor="remember-me"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={isSubmitting}
+                  className="w-4 h-4"
+                />
                 Remember me
               </label>
-              <a href="/auth/forgot-password" className="text-primary hover:text-primary/80 font-medium">
+              <Link href="/auth/forgot-password" className="text-primary hover:text-primary/80 font-medium">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
-            <Button className="w-full gap-2" size="lg">
-              Sign In
-              <ArrowRight className="w-4 h-4" />
+            <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in…' : 'Sign In'}
+              {!isSubmitting && <ArrowRight className="w-4 h-4" />}
             </Button>
           </form>
 
@@ -100,11 +241,25 @@ export default function SignInPage() {
 
           {/* Social Login */}
           <div className="space-y-3">
-            <Button variant="outline" className="w-full" size="lg">
-              Google
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              size="lg"
+              disabled={socialLoading !== null || isSubmitting}
+              onClick={() => handleSocialSignIn('google')}
+            >
+              {socialLoading === 'google' ? 'Redirecting…' : 'Google'}
             </Button>
-            <Button variant="outline" className="w-full" size="lg">
-              GitHub
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              size="lg"
+              disabled={socialLoading !== null || isSubmitting}
+              onClick={() => handleSocialSignIn('github')}
+            >
+              {socialLoading === 'github' ? 'Redirecting…' : 'GitHub'}
             </Button>
           </div>
 
