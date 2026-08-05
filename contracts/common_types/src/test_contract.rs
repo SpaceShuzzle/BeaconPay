@@ -84,56 +84,42 @@ mod tests {
     }
 
     // ── Exhaustiveness guards ────────────────────────────────────────────
-    // Each of these matches every variant with no wildcard arm. That means
-    // if a variant is ever added to the enum elsewhere in the crate without
-    // also being added to the corresponding `all_*` list below, THIS FILE
-    // FAILS TO COMPILE — so round-trip coverage can't silently go stale as
-    // the shared types evolve. If you hit a compile error here after adding
-    // a variant, that's the point: add it to the matching list too.
+    // `exhaustive_variants!` takes a single list of variant names and
+    // produces BOTH an exhaustive match (no wildcard arm) and the array of
+    // values, from that one list. That matters because a match with no
+    // wildcard arm only forces you to update the *match* when a variant is
+    // added — it does nothing to guarantee some separately-maintained array
+    // literal elsewhere also grew to include it. Deriving the array FROM
+    // the same match (by calling the match as an identity function per
+    // variant) means there's no second list to forget to update: add a
+    // variant to the enum, and this macro invocation fails to compile
+    // (E0004: non-exhaustive patterns) until you add it here, and here is
+    // the only place you need to add it.
+    macro_rules! exhaustive_variants {
+        ($ty:ident { $($variant:ident),+ $(,)? }) => {{
+            fn identity_if_covered(v: $ty) -> $ty {
+                match v {
+                    $($ty::$variant => $ty::$variant,)+
+                }
+            }
+            [$(identity_if_covered($ty::$variant)),+]
+        }};
+    }
 
     fn all_subscription_plans() -> [SubscriptionPlan; 3] {
-        fn _exhaustive(p: SubscriptionPlan) {
-            match p {
-                SubscriptionPlan::Daily => {}
-                SubscriptionPlan::Monthly => {}
-                SubscriptionPlan::PayPerUse => {}
-            }
-        }
-        [
-            SubscriptionPlan::Daily,
-            SubscriptionPlan::Monthly,
-            SubscriptionPlan::PayPerUse,
-        ]
+        exhaustive_variants!(SubscriptionPlan { Daily, Monthly, PayPerUse })
     }
 
     fn all_attendance_actions() -> [AttendanceAction; 2] {
-        fn _exhaustive(a: AttendanceAction) {
-            match a {
-                AttendanceAction::ClockIn => {}
-                AttendanceAction::ClockOut => {}
-            }
-        }
-        [AttendanceAction::ClockIn, AttendanceAction::ClockOut]
+        exhaustive_variants!(AttendanceAction { ClockIn, ClockOut })
     }
 
     fn all_user_roles() -> [UserRole; 2] {
-        fn _exhaustive(r: UserRole) {
-            match r {
-                UserRole::Admin => {}
-                UserRole::Staff => {}
-            }
-        }
-        [UserRole::Admin, UserRole::Staff]
+        exhaustive_variants!(UserRole { Admin, Staff })
     }
 
     fn all_membership_statuses() -> [MembershipStatus; 2] {
-        fn _exhaustive(s: MembershipStatus) {
-            match s {
-                MembershipStatus::Active => {}
-                MembershipStatus::Revoked => {}
-            }
-        }
-        [MembershipStatus::Active, MembershipStatus::Revoked]
+        exhaustive_variants!(MembershipStatus { Active, Revoked })
     }
 
     #[test]
