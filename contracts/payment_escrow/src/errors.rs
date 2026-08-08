@@ -34,6 +34,10 @@ pub enum Error {
     PaymentTokenNotSet = 5011,
     /// Contract is paused.
     ContractPaused = 5012,
+    /// release_after is non-zero but not strictly in the future at
+    /// creation time, which would make the escrow immediately
+    /// auto-claimable and defeats the point of setting it at all.
+    InvalidReleaseTime = 5013,
 }
 
 impl Error {
@@ -59,6 +63,9 @@ impl Error {
             Error::InvalidAmount => "Escrow amount must be greater than zero",
             Error::PaymentTokenNotSet => "Payment token address has not been set",
             Error::ContractPaused => "Contract is paused",
+            Error::InvalidReleaseTime => {
+                "release_after must be strictly in the future, or zero to disable auto-claim"
+            }
         }
     }
 
@@ -113,7 +120,7 @@ impl Error {
     /// Errors caused by invalid input to an otherwise well-formed,
     /// well-authorized call.
     pub fn is_validation_error(&self) -> bool {
-        matches!(self, Error::InvalidAmount)
+        matches!(self, Error::InvalidAmount | Error::InvalidReleaseTime)
     }
 }
 
@@ -144,6 +151,7 @@ mod tests {
         Error::InvalidAmount,
         Error::PaymentTokenNotSet,
         Error::ContractPaused,
+        Error::InvalidReleaseTime,
     ];
 
     #[test]
@@ -184,6 +192,7 @@ mod tests {
     fn test_specific_codes() {
         assert_eq!(Error::AdminNotSet.code(), 5000);
         assert_eq!(Error::ContractPaused.code(), 5012);
+        assert_eq!(Error::InvalidReleaseTime.code(), 5013);
     }
 
     #[test]
@@ -204,6 +213,7 @@ mod tests {
         assert!(!Error::DisputeWindowClosed.is_claim_error());
 
         assert!(Error::InvalidAmount.is_validation_error());
+        assert!(Error::InvalidReleaseTime.is_validation_error());
         assert!(!Error::EscrowNotFound.is_validation_error());
     }
 
