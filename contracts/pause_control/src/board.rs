@@ -1,6 +1,5 @@
 // contracts/payment_escrow/src/lib.rs
 #![no_std]
-#![allow(deprecated)]
 
 mod errors;
 mod types;
@@ -11,14 +10,24 @@ mod test;
 pub use errors::Error;
 pub use types::{Escrow, EscrowStatus};
 
-use board::{
+use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, token, Address, Env, String, Vec,
 };
+
+// ── Storage TTL management ──────────────────────────────────────────────────
+//
+// Persistent storage entries get archived from the ledger if their TTL
+// isn't periodically extended — independent of the escrow's own logical
+// status. These constants assume ~5s average ledger close time; tune to
+// your actual usage pattern.
+const DAY_IN_LEDGERS: u32 = 17_280;
+const TTL_THRESHOLD: u32 = DAY_IN_LEDGERS * 30;
+const TTL_EXTEND_TO: u32 = DAY_IN_LEDGERS * 90;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 
 #[contracttype]
-pub enum onbaording {
+pub enum DataKey {
     /// Contract administrator address.
     Admin,
     /// Address of the accepted payment token.
@@ -93,10 +102,23 @@ impl PaymentEscrowContract {
             .ok_or(Error::EscrowNotFound)
     }
 
+    /// Persists an escrow record and bumps its TTL in one place, so every
+    /// call site that writes an escrow gets TTL management for free instead
+    /// of needing to remember to call `extend_ttl` individually.
     fn save_escrow(env: &Env, escrow: &Escrow) {
+        let key = DataKey::Escrow(escrow.id.clone());
+        env.storage().persistent().set(&key, escrow);
         env.storage()
             .persistent()
-            .set(&DataKey::Escrow(escrow.id.clone()), escrow);
+            .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND_TO);
+    }
+
+    /// Same TTL-bump convenience for the depositor/beneficiary index lists.
+    fn save_index(env: &Env, key: &DataKey, list: &Vec<String>) {
+        env.storage().persistent().set(key, list);
+        env.storage()
+            .persistent()
+            .extend_ttl(key, TTL_THRESHOLD, TTL_EXTEND_TO);
     }
 
     // ── Initialisation ────────────────────────────────────────────────────────
@@ -116,7 +138,6 @@ impl PaymentEscrowContract {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(Error::AlreadyInitialized);
         }
-        // SAFETY: requires auth
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage()
@@ -185,19 +206,12 @@ impl PaymentEscrowContract {
         let dispute_window = Self::get_dispute_window(&env);
         let now = env.ledger().timestamp();
 
-        // Pull funds from depositor into the contract
-        token::Client::new(&env, &payment_token).transfer(
-            &depositor,
-            env.current_contract_address(),
-            &amount,
-        );
-
         let escrow = Escrow {
             id: escrow_id.clone(),
             depositor: depositor.clone(),
             beneficiary: beneficiary.clone(),
             amount,
-            payment_token,
+            payment_token: payment_token.clone(),
             status: EscrowStatus::Pending,
             description,
             created_at: now,
@@ -207,29 +221,46 @@ impl PaymentEscrowContract {
             resolved_at: None,
         };
 
+        // Effects BEFORE the external token transfer below (checks-effects-
+        // interactions): the escrow ID is now marked as taken, and the
+        // indexes updated, before we ever hand control to another
+        // contract. If `payment_token` turned out to be adversarial and
+        // tried to re-enter `create_escrow` with this same ID during the
+        // transfer, the `has(...)` check above would already see it as
+        // existing on the reentrant call and reject it — rather than the
+        // reentrant call sailing through because the record hadn't been
+        // written yet.
         Self::save_escrow(&env, &escrow);
 
-        // Index: depositor → escrow IDs
         let mut dep_list: Vec<String> = env
             .storage()
             .persistent()
             .get(&DataKey::DepositorEscrows(depositor.clone()))
             .unwrap_or(Vec::new(&env));
         dep_list.push_back(escrow_id.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::DepositorEscrows(depositor.clone()), &dep_list);
+        Self::save_index(&env, &DataKey::DepositorEscrows(depositor.clone()), &dep_list);
 
-        // Index: beneficiary → escrow IDs
         let mut ben_list: Vec<String> = env
             .storage()
             .persistent()
             .get(&DataKey::BeneficiaryEscrows(beneficiary.clone()))
             .unwrap_or(Vec::new(&env));
         ben_list.push_back(escrow_id.clone());
-        env.storage()
-            .persistent()
-            .set(&DataKey::BeneficiaryEscrows(beneficiary.clone()), &ben_list);
+        Self::save_index(
+            &env,
+            &DataKey::BeneficiaryEscrows(beneficiary.clone()),
+            &ben_list,
+        );
+
+        // Interaction LAST: pull funds from depositor into the contract
+        // only after all of this contract's own state is already
+        // committed to reflect the new escrow.
+        let contract_address = env.current_contract_address();
+        token::Client::new(&env, &payment_token).transfer(
+            &depositor,
+            &contract_address,
+            &amount,
+        );
 
         env.events().publish(
             (symbol_short!("created"), escrow_id),
@@ -251,15 +282,23 @@ impl PaymentEscrowContract {
         }
 
         let now = env.ledger().timestamp();
-        token::Client::new(&env, &escrow.payment_token).transfer(
-            &env.current_contract_address(),
-            &escrow.beneficiary,
-            &escrow.amount,
-        );
 
+        // Effects before interaction: mark the escrow Released and persist
+        // it BEFORE the token transfer. If the token contract's transfer
+        // implementation re-entered `release` (or `refund`/`claim`) on this
+        // same escrow mid-call, it would now see status != Pending and be
+        // rejected — closing the double-spend window that existed when
+        // this write happened after the transfer instead.
         escrow.status = EscrowStatus::Released;
         escrow.resolved_at = Some(now);
         Self::save_escrow(&env, &escrow);
+
+        let contract_address = env.current_contract_address();
+        token::Client::new(&env, &escrow.payment_token).transfer(
+            &contract_address,
+            &escrow.beneficiary,
+            &escrow.amount,
+        );
 
         env.events().publish(
             (symbol_short!("released"), escrow_id),
@@ -279,15 +318,19 @@ impl PaymentEscrowContract {
         }
 
         let now = env.ledger().timestamp();
-        token::Client::new(&env, &escrow.payment_token).transfer(
-            &env.current_contract_address(),
-            &escrow.depositor,
-            &escrow.amount,
-        );
 
+        // See the comment in `release` — same checks-effects-interactions
+        // reordering, same reason.
         escrow.status = EscrowStatus::Refunded;
         escrow.resolved_at = Some(now);
         Self::save_escrow(&env, &escrow);
+
+        let contract_address = env.current_contract_address();
+        token::Client::new(&env, &escrow.payment_token).transfer(
+            &contract_address,
+            &escrow.depositor,
+            &escrow.amount,
+        );
 
         env.events().publish(
             (symbol_short!("refunded"), escrow_id),
@@ -320,7 +363,14 @@ impl PaymentEscrowContract {
         if escrow.dispute_window == 0 {
             return Err(Error::DisputeWindowClosed);
         }
-        if env.ledger().timestamp() > escrow.created_at + escrow.dispute_window {
+        // saturating_add rather than `+`: dispute_window is admin-controlled
+        // (via initialize/set_dispute_window), but an accidentally huge
+        // value should not be able to panic this call via u64 overflow. If
+        // it would overflow, we saturate to u64::MAX — i.e. the dispute
+        // window is effectively "never closes," which is the safe
+        // direction to fail in (more depositor protection, not less).
+        let window_closes_at = escrow.created_at.saturating_add(escrow.dispute_window);
+        if env.ledger().timestamp() > window_closes_at {
             return Err(Error::DisputeWindowClosed);
         }
 
@@ -361,12 +411,7 @@ impl PaymentEscrowContract {
             escrow.depositor.clone()
         };
 
-        token::Client::new(&env, &escrow.payment_token).transfer(
-            &env.current_contract_address(),
-            &recipient,
-            &escrow.amount,
-        );
-
+        // Effects before interaction, same reasoning as `release`/`refund`.
         escrow.status = if release_to_beneficiary {
             EscrowStatus::Released
         } else {
@@ -374,6 +419,13 @@ impl PaymentEscrowContract {
         };
         escrow.resolved_at = Some(now);
         Self::save_escrow(&env, &escrow);
+
+        let contract_address = env.current_contract_address();
+        token::Client::new(&env, &escrow.payment_token).transfer(
+            &contract_address,
+            &recipient,
+            &escrow.amount,
+        );
 
         env.events().publish(
             (symbol_short!("resolved"), escrow_id),
@@ -408,15 +460,18 @@ impl PaymentEscrowContract {
         }
 
         let now = env.ledger().timestamp();
-        token::Client::new(&env, &escrow.payment_token).transfer(
-            &env.current_contract_address(),
-            &escrow.beneficiary,
-            &escrow.amount,
-        );
 
+        // Effects before interaction, same reasoning as `release`/`refund`.
         escrow.status = EscrowStatus::Released;
         escrow.resolved_at = Some(now);
         Self::save_escrow(&env, &escrow);
+
+        let contract_address = env.current_contract_address();
+        token::Client::new(&env, &escrow.payment_token).transfer(
+            &contract_address,
+            &escrow.beneficiary,
+            &escrow.amount,
+        );
 
         env.events().publish(
             (symbol_short!("claimed"), escrow_id),
