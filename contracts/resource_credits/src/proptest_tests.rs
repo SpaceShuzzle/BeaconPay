@@ -8,12 +8,21 @@ use soroban_sdk::{
     Address, Env,
 };
 
-fn setup_test() -> (Env, Address, ResourceCreditsContractClient<'static>) {
-    let env = Env::default();
+/// `Env` isn't `'static`, but `ResourceCreditsContractClient` borrows it —
+/// so returning both from one function normally ties the client's lifetime
+/// to a local that's about to be dropped. `Box::leak` gives the `Env` a
+/// genuine `'static` lifetime instead of relying on the client's `'static`
+/// annotation happening to be sound anyway: the leak is real (the `Env`
+/// lives for the rest of the test process), but it's scoped to a single
+/// short-lived proptest case, which is a fine trade for actually being
+/// correct rather than hoping `Env`'s internal representation tolerates
+/// the move.
+fn setup_test() -> (&'static Env, Address, ResourceCreditsContractClient<'static>) {
+    let env: &'static Env = Box::leak(Box::new(Env::default()));
     let contract_id = env.register(ResourceCreditsContract, ());
-    let client = ResourceCreditsContractClient::new(&env, &contract_id);
-    let admin = Address::generate(&env);
-    let token = Address::generate(&env);
+    let client = ResourceCreditsContractClient::new(env, &contract_id);
+    let admin = Address::generate(env);
+    let token = Address::generate(env);
     env.mock_all_auths();
     client.initialize(&admin, &token);
     (env, admin, client)
@@ -26,7 +35,7 @@ proptest! {
         spend_amount in 1u128..2_000_000u128,
     ) {
         let (env, admin, client) = setup_test();
-        let user = Address::generate(&env);
+        let user = Address::generate(env);
 
         let mint_result = client.try_mint_credits(&admin, &user, &mint_amount);
         if mint_result.is_err() {
@@ -61,17 +70,32 @@ proptest! {
         let mut total_spent: u128 = 0;
 
         for (i, &amount) in mint_amounts.iter().enumerate() {
-            let user = Address::generate(&env);
-            let _ = client.try_mint_credits(&admin, &user, &amount);
-            total_minted += amount;
+            let user = Address::generate(env);
+
+            // Only count this mint toward `total_minted` if it actually
+            // succeeded — previously this was unconditional (`let _ =
+            // ...`), so a call that failed for any reason would still get
+            // counted, silently drifting the test's own bookkeeping away
+            // from what's actually true on-chain.
+            let mint_result = client.try_mint_credits(&admin, &user, &amount);
+            if mint_result.is_ok() {
+                total_minted += amount;
+            }
+            users.push(user);
 
             let fraction = spend_fractions.get(i % spend_fractions.len()).copied().unwrap_or(0);
             let spend_amount = (amount * fraction) / 100;
             if spend_amount > 0 {
-                let _ = client.try_spend_credits(&user, &spend_amount);
-                total_spent += spend_amount;
+                // Same fix: only count spent amount if the spend actually
+                // succeeded. If the preceding mint failed, this spend
+                // would presumably also fail (nothing to spend) — without
+                // checking, that failure would previously still have been
+                // added to total_spent.
+                let spend_result = client.try_spend_credits(&user, &spend_amount);
+                if spend_result.is_ok() {
+                    total_spent += spend_amount;
+                }
             }
-            users.push(user);
         }
 
         let mut total_user_balances: u128 = 0;
@@ -93,8 +117,8 @@ proptest! {
         transfer_amount in 1u128..500_000u128,
     ) {
         let (env, admin, client) = setup_test();
-        let sender = Address::generate(&env);
-        let recipient = Address::generate(&env);
+        let sender = Address::generate(env);
+        let recipient = Address::generate(env);
 
         let mint_result = client.try_mint_credits(&admin, &sender, &supply);
         if mint_result.is_err() {
@@ -127,5 +151,86 @@ proptest! {
                 "Balances must sum to supply after transfer",
             );
         }
+    }
+}
+
+// ── Deterministic boundary regression tests ─────────────────────────────────
+//
+// These live outside the `proptest!` block on purpose: they target exact
+// boundary values (spend precisely the full balance, mint near u128::MAX)
+// that a continuous random range essentially never samples by chance, no
+// matter how many cases proptest runs. Random property tests are great at
+// covering the general shape of a property across the input space; they're
+// bad at reliably hitting one specific edge — that's what plain #[test]s
+// are for.
+
+#[test]
+fn spend_exact_balance_succeeds_and_zeroes_out() {
+    let (env, admin, client) = setup_test();
+    let user = Address::generate(env);
+
+    let mint_amount: u128 = 5_000;
+    client.mint_credits(&admin, &user, &mint_amount);
+
+    // Spending exactly the full balance — the `spend_amount > mint_amount`
+    // vs `spend_amount <= mint_amount` boundary from the property test
+    // above, pinned to its exact edge instead of hoping a random sample
+    // lands on it.
+    let result = client.try_spend_credits(&user, &mint_amount);
+    assert!(result.is_ok(), "spending exactly the full balance should succeed");
+    assert_eq!(client.balance(&user), 0, "balance should be exactly zero after spending it all");
+}
+
+#[test]
+fn spend_one_more_than_balance_fails() {
+    let (env, admin, client) = setup_test();
+    let user = Address::generate(env);
+
+    let mint_amount: u128 = 5_000;
+    client.mint_credits(&admin, &user, &mint_amount);
+
+    let result = client.try_spend_credits(&user, &(mint_amount + 1));
+    assert!(result.is_err(), "spending one more than the balance should fail");
+    assert_eq!(client.balance(&user), mint_amount, "balance must be unchanged after a rejected spend");
+}
+
+#[test]
+fn mint_never_silently_wraps_balance_on_overflow() {
+    let (env, admin, client) = setup_test();
+    let user = Address::generate(env);
+
+    // Deliberately near u128::MAX rather than a randomly-sampled value —
+    // a uniform random u128 strategy would need to be extraordinarily
+    // lucky to land anywhere near the top of that range, so overflow
+    // behavior specifically needs a targeted boundary test like this one.
+    let huge = u128::MAX - 1;
+
+    let first_mint = client.try_mint_credits(&admin, &user, &huge);
+    if first_mint.is_err() {
+        // The contract may legitimately cap mint size below u128::MAX —
+        // that's an acceptable design choice. Nothing further to check in
+        // that case; the balance should simply be untouched.
+        assert_eq!(client.balance(&user), 0);
+        return;
+    }
+    let balance_after_first = client.balance(&user);
+
+    let second_mint = client.try_mint_credits(&admin, &user, &2u128);
+    let balance_after_second = client.balance(&user);
+
+    if second_mint.is_ok() {
+        // If the second mint was accepted, the balance must reflect a
+        // real addition — NOT a wraparound that produced a number smaller
+        // than the balance before this call, which is what silent u128
+        // overflow would look like.
+        assert!(
+            balance_after_second >= balance_after_first,
+            "balance decreased after a successful mint — looks like silent overflow wraparound: {} -> {}",
+            balance_after_first, balance_after_second,
+        );
+    } else {
+        // Rejecting the overflowing mint (e.g. via checked_add) is the
+        // correct, safe behavior — balance should be left untouched.
+        assert_eq!(balance_after_second, balance_after_first);
     }
 }
