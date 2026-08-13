@@ -3,7 +3,86 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowRight, Play } from 'lucide-react'
+import {
+  ArrowRight,
+  Play,
+  LayoutDashboard,
+  Layers,
+  ShieldCheck,
+  Clock,
+  type LucideIcon,
+} from 'lucide-react'
+
+interface DemoSectionProps {
+  id: string
+  icon: LucideIcon
+  title: string
+  description: string
+}
+
+// Every section currently renders the same "not built yet" placeholder —
+// once real screenshots/embeds exist for a given feature, swap this
+// component's body for the actual demo content for that section only,
+// rather than changing all three at once.
+function DemoSection({ id, icon: Icon, title, description }: DemoSectionProps) {
+  return (
+    <section
+      id={id}
+      className="scroll-mt-24 bg-card rounded-2xl border border-border overflow-hidden"
+    >
+      <div className="p-8">
+        <div className="flex items-start gap-4 mb-2">
+          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Icon className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+          </div>
+        </div>
+        <p className="text-muted-foreground mb-6 ml-15 pl-0">{description}</p>
+        <div className="bg-background/50 rounded-lg h-96 flex items-center justify-center border border-border/50">
+          <div className="text-center px-6">
+            <Badge className="inline-flex mb-4 bg-muted text-muted-foreground hover:bg-muted">
+              <Clock className="w-3 h-3 mr-1" />
+              Coming soon
+            </Badge>
+            <p className="text-muted-foreground mb-4">
+              We&apos;re still building this preview. Create a free account to try{' '}
+              {title.toLowerCase()} for real today.
+            </p>
+            <Link href="/auth/signup">
+              <Button className="gap-2">
+                Create Free Account
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const SECTIONS: DemoSectionProps[] = [
+  {
+    id: 'dashboard',
+    icon: LayoutDashboard,
+    title: 'Dashboard Overview',
+    description: 'Get instant insights into your payment activity with real-time analytics',
+  },
+  {
+    id: 'batch-payments',
+    icon: Layers,
+    title: 'Batch Payments',
+    description: 'Send multiple payments in a single transaction to save on fees',
+  },
+  {
+    id: 'approvals',
+    icon: ShieldCheck,
+    title: 'Multi-Sig Approvals',
+    description: 'Require multiple approvals for payment verification and compliance',
+  },
+]
 
 export default function DemoPage() {
   return (
@@ -20,6 +99,23 @@ export default function DemoPage() {
         </div>
       </header>
 
+      {/* Section nav — lets visitors jump straight to the part they care
+          about instead of scrolling past three large, similarly-shaped
+          blocks to find it. */}
+      <nav className="sticky top-16 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center gap-6 overflow-x-auto">
+          {SECTIONS.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground whitespace-nowrap transition-colors"
+            >
+              {section.title}
+            </a>
+          ))}
+        </div>
+      </nav>
+
       {/* Demo Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
@@ -35,62 +131,9 @@ export default function DemoPage() {
 
         {/* Demo Sections */}
         <div className="space-y-8">
-          {/* Dashboard Demo */}
-          <section className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="p-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Dashboard Overview</h2>
-              <p className="text-muted-foreground mb-6">
-                Get instant insights into your payment activity with real-time analytics
-              </p>
-              <div className="bg-background/50 rounded-lg h-96 flex items-center justify-center border border-border/50">
-                <div className="text-center">
-                  <p className="text-muted-foreground mb-4">Dashboard preview coming soon</p>
-                  <Button className="gap-2">
-                    Explore Dashboard
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Batch Payments Demo */}
-          <section className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="p-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Batch Payments</h2>
-              <p className="text-muted-foreground mb-6">
-                Send multiple payments in a single transaction to save on fees
-              </p>
-              <div className="bg-background/50 rounded-lg h-96 flex items-center justify-center border border-border/50">
-                <div className="text-center">
-                  <p className="text-muted-foreground mb-4">Batch payment interface preview</p>
-                  <Button className="gap-2">
-                    Try Batch Payments
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Approvals Demo */}
-          <section className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="p-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Multi-Sig Approvals</h2>
-              <p className="text-muted-foreground mb-6">
-                Require multiple approvals for payment verification and compliance
-              </p>
-              <div className="bg-background/50 rounded-lg h-96 flex items-center justify-center border border-border/50">
-                <div className="text-center">
-                  <p className="text-muted-foreground mb-4">Approval workflow preview</p>
-                  <Button className="gap-2">
-                    View Approvals
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
+          {SECTIONS.map((section) => (
+            <DemoSection key={section.id} {...section} />
+          ))}
         </div>
 
         {/* CTA */}
